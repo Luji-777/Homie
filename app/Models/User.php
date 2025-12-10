@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Symfony\Component\HttpKernel\Profiler\Profile;
 
 class User extends Authenticatable
 {
@@ -21,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'phone_number'
     ];
 
     /**
@@ -44,5 +46,34 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    public function profile()
+    {
+        return $this->hasOne(Profile::class, 'user_id');
+    }
+
+    public function apartments()
+    {
+        return $this->hasMany(Apartment::class, 'owner_id');
+    }
+
+    public function booking()
+    {
+        return $this->hasMany(Booking::class, 'tenant_id');
+    }
+
+    //-----------------------------
+    public function favoriteApartment()
+    {
+        return $this->belongsToMany(Apartment::class, 'tenant_id', 'favorite', 'apartment_id')->withTimestamps();
+    }
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function receivedMessages()
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
     }
 }

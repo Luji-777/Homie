@@ -15,15 +15,18 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
-            $table->string('discription');
+            $table->text('discription');
             $table->string('city');
             $table->string('governorate');
             $table->string('address');
             $table->float('price_per_day');
             $table->float('price_per_month');
+            $table->json('specifications')->nullable(); // لتخزين مواصفات إضافية كـ JSON
             $table->integer('room');
             $table->boolean('wifi');
             $table->string('status');
+            $table->boolean('is_available')->default(true); // يا هيك يا أما نحط الحالة تبعها بس الحالة حتكون string
+
 
             $table->timestamps();
         });

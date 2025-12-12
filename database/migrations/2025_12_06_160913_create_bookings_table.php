@@ -15,20 +15,22 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('apartment_id')->constrained('apartments')->onDelete('cascade');
-            $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('owner_id')->constrained('users')->onDelete('cascade'); // هاد بجوز مش ضروري لأنه فينا نجيب owner من الapartment
             $table->foreignId('tenant_id')->constrained('users')->onDelete('cascade');
             $table->date('check_in');
             $table->date('check_out');
             $table->float('total_price');
             $table->enum('status',[
                 'pending',
-                 'owner _approved',
-                 'awner_rejectede',
-                 'paid',
-                 'canceled',
-                 'completed',
+                'owner _approved',
+                'awner_rejectede',
+                'paid',
+                'canceled',
+                'completed',
                 ]);
             $table->text('cancellation_resion')->nullable();
+            $table->boolean('owner_approval')->default(false); // موافقة المالك
+
 
             $table->timestamps();
         });

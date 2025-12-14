@@ -13,13 +13,15 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name')->nullable();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
 
             $table->string('phone_number')->unique();
             $table->boolean('is_verified')->default(false); // حالة موافقة المدير
+            $table->string('otp_code')->nullable(); // رمز التحقق
+            $table->timestamp('otp_expires_at')->nullable(); // وقت انتهاء رمز التحقق
 
             $table->rememberToken();
             $table->timestamps();

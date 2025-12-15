@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Profile;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -55,6 +57,9 @@ class UserController extends Controller
         ]);
     }
 
+
+
+
     public function verifyOtp(Request $request)
     {
         $request->validate([
@@ -80,5 +85,47 @@ class UserController extends Controller
                 'status'  => 'pending_approval'
             ]);
         }
+    }
+
+
+    public function login(Request $request)
+    {
+        $request->validate([
+            'phone_number' => 'required|digits_between:9,15',
+            'password' => 'required|string|min:6|max:255'
+        ]);
+        if (!Auth::attempt($request->only('phone_number', 'password'))) 
+            {
+                return response()->json([
+                    'message' => 'Invalid login details'
+                ], 401);
+            }
+            $user= User::where('phone_number', $request->phone_number)->first();        
+            $token= $user->createToken('auth_Token')->plainTextToken;
+            return response()->json([
+                'message' => 'Login successful',
+                'user' => FacadesAuth::user(),
+                'Token' => $token
+            ],201);
+            /*
+
+        *//*
+        $user = User::where('phone_number', $request->phone_number)->first();
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'The provided credentials are incorrect.'], 401);
+        }
+        return response()->json([
+            'message' => 'Login successful',
+            'user' => $user
+        ]);
+        */
+    }
+
+    public function logout(Request $request){
+        // Logic for logging out the user
+        $request->user()->currentAccessToken()->delete();
+            return response()->json([
+            'message' => 'Logout successful'
+        ],204);
     }
 }

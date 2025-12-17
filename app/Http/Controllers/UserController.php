@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    // تسجيل مستخدم جديد
     public function register(Request $request)
     {
         $request->validate([
@@ -20,13 +21,24 @@ class UserController extends Controller
             'phone_number' => 'required|digits_between:9,15|unique:users,phone_number',
             'email' => 'required|string|max:255|unique:users,email',
             'password' => 'required|string|min:6|max:255|confirmed',
-            'birth_date' => 'required|date|before:today'
-            //'personal_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            //'id_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048'
+            'birth_date' => 'required|date|before:today',
+            'personal_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'id_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        $otp = rand(100000, 999999); // توليد رمز تحقق عشوائي من 6 أرقام
+        $otp = rand(1000, 9999); // توليد رمز تحقق عشوائي من 4 أرقام
         $birthDate = Carbon::createFromFormat('d-m-Y', $request->birth_date)->format('Y-m-d'); // شكل التاريخ
+
+        ///تجريب طه 
+        $personalPhotoPath = null;
+        if ($request->hasFile('personal_photo')) {
+            $personalPhotoPath = $request->file('personal_photo')->store('profiles', 'public');
+        }
+
+        $idImagePath = null;
+        if ($request->hasFile('id_photo')) {
+            $idImagePath = $request->file('id_photo')->store('identities', 'public');
+        }
         // $personalPhotoPath = $request->file('personal_photo')->store('personal_photo', 'public'); // تخزين صورة المستخدم
         // $idPhotoPath = $request->file('id_photo')->store('id_photo', 'public'); // تخزين صورة الهوية
 
@@ -44,33 +56,39 @@ class UserController extends Controller
             'user_id' => $user->id,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
-            'birth_date' => $birthDate
-            // 'personal_photo' => $personalPhotoPath,
-            //'id_photo' => $idPhotoPath
+            'birth_date' => $birthDate,
+            'personal_photo' => $personalPhotoPath,
+            'id_photo' => $idImagePath
         ]);
+
+
+        // إنشاء توكن للمستخدم
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'the account created successfully, Please verify your phone number.',
             'otp'     => $otp,                           // حذف
             'phone_number'   => $request->phone_number,
-            'next_step' => 'verify-otp'
+            'next_step' => 'verify-otp',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
         ]);
     }
 
 
 
-
+    // التحقق من رمز التحقق
     public function verifyOtp(Request $request)
     {
         $request->validate([
             'phone_number' => 'required',
-            'otp'   => 'required|digits:6'
+            'otp'   => 'required|string|max:255'
         ]);
 
         $user = User::where('phone_number', $request->phone_number)->firstOrFail();
 
         if ($user->otp_code !== $request->otp || Carbon::now()->gt($user->otp_expires_at)) {
-            return response()->json(['message' => 'the code isnot true'], 422);
+            return response()->json(['message' => 'the code isnot true', 'otp' => $user->otp_code], 422);
         }
 
         // إذا كان الحساب لسا ما تمت الموافقة عليه
@@ -87,7 +105,30 @@ class UserController extends Controller
         }
     }
 
+    // إعادة إرسال رمز التحقق
+    //ممكن نعمل حد اقصى لاعادة الارسال
+    //ممكن نعمل الدالة تشتغل عن طريق التوكن بدل رقم الهاتف
+    public function resendOtp(Request $request)
+    {
+        $request->validate([
+            'phone_number' => 'required'
+        ]);
 
+        $user = User::where('phone_number', $request->phone_number)->firstOrFail();
+
+        $otp = rand(100000, 999999);
+        $user->otp_code = $otp;
+        $user->otp_expires_at = Carbon::now()->addMinutes(10);
+        $user->save();
+
+        return response()->json([
+            'message' => 'OTP resent successfully.',
+            'otp'     => $otp // حذف
+        ]);
+    }
+
+    // تسجيل الدخول
+    //
     public function login(Request $request)
     {
         $request->validate([
@@ -121,6 +162,8 @@ class UserController extends Controller
         */
     }
 
+    // تسجيل الخروج
+    // حذف التوكن الحالي
     public function logout(Request $request){
         // Logic for logging out the user
         $request->user()->currentAccessToken()->delete();

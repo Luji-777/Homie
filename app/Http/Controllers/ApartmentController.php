@@ -12,7 +12,7 @@ class ApartmentController extends Controller
 
     public function index()
     {
-       $apartments= Apartment::where('is_approved',true)->get(); 
+       $apartments= Apartment::where('is_approved',true)->get();
         return response()->json($apartments,201);
     }
 
@@ -23,7 +23,7 @@ class ApartmentController extends Controller
 
          $apartments= Apartment::create($validatedData);
         return response()->json([
-            'message'=>'Apatment created successfuly. waiting for admin to approve.',
+            'message'=>'Apartment created successfuly. waiting for admin to approve.',
             'apartment'=> $apartments],201);
     }
 

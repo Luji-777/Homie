@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CityController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -11,5 +12,10 @@ Route::get('/user', function (Request $request) {
 
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/verifyOtp', [UserController::class, 'verifyOtp']);
+Route::post('/resendOtp', [UserController::class, 'resendOtp']);
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
+
+
+Route::get('/cities', [CityController::class, 'cities']);
+Route::get('/areas', [CityController::class, 'areas']);

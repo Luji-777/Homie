@@ -15,9 +15,15 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            // $table->foreignId('area_id')->constrained('areas');
+            // $table->foreignId('city_id')->constrained('cities');
+            // $table->unsignedBigInteger('area_id')->nullable();
+
             $table->string('first_name');
             $table->string('last_name');
             $table->date('birth_date');
+
+
             $table->string('id_photo')->nullable();
             $table->string('personal_photo')->nullable();
 

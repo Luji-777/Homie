@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule; 
 
 class UserController extends Controller
 {
@@ -19,55 +20,65 @@ class UserController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'phone_number' => 'required|digits_between:9,15|unique:users,phone_number',
-            'email' => 'required|string|max:255|unique:users,email',
             'password' => 'required|string|min:6|max:255|confirmed',
             'birth_date' => 'required|date|before:today',
+
+             // إضافة قواعد التحقق للمحافظة والمنطقة
+            'city_id' => 'required|integer|exists:cities,id',
+            'area_id' => [
+                'required', 
+                'integer', 
+                // التأكد من أن المنطقة المختارة تابعة للمحافظة المختارة
+                Rule::exists('areas', 'id')->where(function ($query) use ($request) {
+                    return $query->where('city_id', $request->city_id);
+                })
+            ],
+            
             'personal_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'id_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $otp = rand(1000, 9999); // توليد رمز تحقق عشوائي من 4 أرقام
         $birthDate = Carbon::createFromFormat('d-m-Y', $request->birth_date)->format('Y-m-d'); // شكل التاريخ
-
-        ///تجريب طه 
+        
+        // معالجة صور المستخدم
         $personalPhotoPath = null;
         if ($request->hasFile('personal_photo')) {
-            $personalPhotoPath = $request->file('personal_photo')->store('profiles', 'public');
+            $personalPhotoPath = $request->file('personal_photo')->store('profiles', 'public'); // تخزين الصورة الشخصية
         }
-
         $idImagePath = null;
         if ($request->hasFile('id_photo')) {
-            $idImagePath = $request->file('id_photo')->store('identities', 'public');
+            $idImagePath = $request->file('id_photo')->store('identities', 'public'); // تخزين صورة الهوية
         }
-        // $personalPhotoPath = $request->file('personal_photo')->store('personal_photo', 'public'); // تخزين صورة المستخدم
-        // $idPhotoPath = $request->file('id_photo')->store('id_photo', 'public'); // تخزين صورة الهوية
 
+        // إنشاء مستخدم جديد
         $user = User::create([
-
+            'name' => $request->first_name . ' ' . $request->last_name,
             'phone_number' => $request->phone_number,
-            'email' => $request->email,
             'password' => Hash::make($request->password),
             'otp_code' => $otp,
             'otp_expires_at' => Carbon::now()->addMinutes(10), // صلاحية الرمز 10 دقايق
             'is_verified' => false
         ]);
-
+        // إنشاء بروفايل للمستخدم
         Profile::create([
             'user_id' => $user->id,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'birth_date' => $birthDate,
+            'city_id' => $request->city_id, 
+            'area_id' => $request->area_id,   
             'personal_photo' => $personalPhotoPath,
             'id_photo' => $idImagePath
         ]);
 
-
         // إنشاء توكن للمستخدم
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // إعادة استجابة بنجاح التسجيل
         return response()->json([
             'message' => 'the account created successfully, Please verify your phone number.',
-            'otp'     => $otp,                           // حذف
+            'otp'     => $otp,                          
             'phone_number'   => $request->phone_number,
             'next_step' => 'verify-otp',
             'access_token' => $token,
@@ -77,27 +88,25 @@ class UserController extends Controller
 
 
 
+
     // التحقق من رمز التحقق
     public function verifyOtp(Request $request)
     {
         $request->validate([
-            'phone_number' => 'required',
+            'phone_number' => 'required|digits_between:9,15',
             'otp'   => 'required|string|max:255'
         ]);
 
         $user = User::where('phone_number', $request->phone_number)->firstOrFail();
-
         if ($user->otp_code !== $request->otp || Carbon::now()->gt($user->otp_expires_at)) {
             return response()->json(['message' => 'the code isnot true', 'otp' => $user->otp_code], 422);
         }
 
-        // إذا كان الحساب لسا ما تمت الموافقة عليه
-
+        // إذا كان الحساب لسا ما تمت الموافقة عليه من المدير
         if (!$user->is_verified) {
             $user->otp_code = null;
             $user->otp_expires_at = null;
             $user->save();
-
             return response()->json([
                 'message' => 'waiting the admin to approve the account.',
                 'status'  => 'pending_approval'
@@ -111,61 +120,61 @@ class UserController extends Controller
     public function resendOtp(Request $request)
     {
         $request->validate([
-            'phone_number' => 'required'
+            'phone_number' => 'required|digits_between:9,15'
         ]);
 
         $user = User::where('phone_number', $request->phone_number)->firstOrFail();
 
-        $otp = rand(100000, 999999);
+        $otp = rand(1000, 9999);
         $user->otp_code = $otp;
         $user->otp_expires_at = Carbon::now()->addMinutes(10);
         $user->save();
 
         return response()->json([
             'message' => 'OTP resent successfully.',
-            'otp'     => $otp // حذف
+            'otp'     => $otp
         ]);
     }
 
     // تسجيل الدخول
-    //
+    // يمكن تسجيل الدخول برقم الهاتف وكلمة المرور
+    // أو برقم الهاتف فقط إذا كان الحساب موثق ومفعل
+    // ممكن نضيف تحقق ثنائي في المستقبل
+    // ممكن نضيف تقييد لعدد محاولات الدخول الفاشلة
+    // ممكن نضيف ميزة "تذكرني" في المستقبل
     public function login(Request $request)
     {
         $request->validate([
             'phone_number' => 'required|digits_between:9,15',
             'password' => 'required|string|min:6|max:255'
         ]);
+
+        // التحقق من بيانات الدخول
         if (!Auth::attempt($request->only('phone_number', 'password'))) 
             {
                 return response()->json([
                     'message' => 'Invalid login details'
                 ], 401);
             }
+            // إنشاء توكن جديد للمستخدم
             $user= User::where('phone_number', $request->phone_number)->first();        
             $token= $user->createToken('auth_Token')->plainTextToken;
+
+            // إعادة استجابة بنجاح الدخول
             return response()->json([
                 'message' => 'Login successful',
                 'user' => FacadesAuth::user(),
                 'Token' => $token
             ],201);
-            /*
-
-        *//*
-        $user = User::where('phone_number', $request->phone_number)->first();
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'The provided credentials are incorrect.'], 401);
-        }
-        return response()->json([
-            'message' => 'Login successful',
-            'user' => $user
-        ]);
-        */
     }
 
     // تسجيل الخروج
     // حذف التوكن الحالي
-    public function logout(Request $request){
-        // Logic for logging out the user
+    // يمكن إضافة ميزة تسجيل الخروج من جميع الأجهزة في المستقبل
+    // ممكن نضيف سجل نشاط المستخدم في المستقبل
+    public function logout(Request $request)
+    {
+        // حذف التوكن الحالي
         $request->user()->currentAccessToken()->delete();
             return response()->json([
             'message' => 'Logout successful'

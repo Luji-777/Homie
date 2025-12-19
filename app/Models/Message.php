@@ -7,12 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Message extends Model
 {
     protected $guarded = [];
+
+    // Define relationship to Apartment model
     public function apartment()
     {
         return $this->belongsTo(Apartment::class);
     }
 
-    //-----------------------------------------
+    // Define relationship to User model for sender and receiver
     public function sender()
     {
         return $this->belongsTo(User::class, 'sender_id')->withDefault([

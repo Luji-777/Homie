@@ -43,31 +43,39 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    //-----------------------------
+    // Define relationship to Profile model
     public function profile()
     {
         return $this->hasOne(Profile::class, 'user_id','id');
     }
 
+    // Define relationship to Apartment model
     public function apartments()
     {
         return $this->hasMany(Apartment::class, 'owner_id');
     }
 
+    // Define relationship to Booking model
     public function booking()
     {
         return $this->hasMany(Booking::class, 'tenant_id');
     }
 
-    //-----------------------------
+    // Define relationship to Favorite model
     public function favoriteApartment()
     {
         return $this->belongsToMany(Apartment::class, 'tenant_id', 'favorite', 'apartment_id')->withTimestamps();
     }
+
+    // Define relationship to Message model
     public function sentMessages()
     {
         return $this->hasMany(Message::class, 'sender_id');
     }
 
+    // Define relationship to Message model
     public function receivedMessages()
     {
         return $this->hasMany(Message::class, 'receiver_id');

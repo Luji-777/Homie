@@ -15,15 +15,15 @@ class ApartmentController extends Controller
     public function index()
     {
         $apartments = FacadesAuth::user()->apartments;
-        $apartments = Apartment::where('is_approved', true)->get();
+        // $apartments = Apartment::where('is_approved', true)->get();
         return response()->json($apartments, 201);
     }
 
     public function store(StoreApartmentRequest $request)
     {
         $validatedData = $request->validated();
-        $oner_id = FacadesAuth::user()->id;
-        $validatedData['owner_id'] = $oner_id;
+        $owner_id = FacadesAuth::user()->id;
+        $validatedData['owner_id'] = $owner_id;
 
         $apartments = Apartment::create($validatedData);
         return response()->json([
@@ -43,11 +43,18 @@ class ApartmentController extends Controller
 
     public function update(UpdateApartmentRequest $request, int $id)
     {
-        $validatedData = $request->validated();
-        $validatedData['owner_id'] = $request->user()->id;
 
+
+        $owner_id = FacadesAuth::user()->id;
         $apartments = Apartment::findorfail($id);
-        $apartments->update($request->all());
+        if ($apartments->owner_id != $owner_id) {
+            return response()->json([
+
+                'message' => 'Unauthorize'
+            ], 403);
+        }
+
+        $apartments->update($request->validated());
         return response()->json([
             'apartment' => $apartments
         ], 200);
@@ -55,7 +62,16 @@ class ApartmentController extends Controller
 
     public function destroy(int $id)
     {
+
+        $owner_id = FacadesAuth::user()->id;
         $apartments = Apartment::findorfail($id);
+        if ($apartments->owner_id != $owner_id) {
+            return response()->json([
+
+                'message' => 'Unauthorize'
+            ], 403);
+        }
+
         $apartments->delete;
         return response()->json([
 

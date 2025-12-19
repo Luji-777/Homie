@@ -15,4 +15,5 @@ Route::post('/verifyOtp', [UserController::class, 'verifyOtp']);
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
 
+
 Route::apiResource('apartments',ApartmentController::class)->middleware('auth:sanctum');

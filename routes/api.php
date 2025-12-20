@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApartmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CityController;
 use Illuminate\Http\Request;
@@ -16,6 +17,8 @@ Route::post('/resendOtp', [UserController::class, 'resendOtp']);
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
 
+
+Route::apiResource('apartments',ApartmentController::class)->middleware('auth:sanctum');
 
 Route::get('/cities', [CityController::class, 'cities']);
 Route::get('/areas', [CityController::class, 'areas']);

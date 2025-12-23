@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('image_path');
             $table->boolean('is_cover')->default(false);
 
+            // ضمان إنو ما يكون إلا صورة غلاف واحدة لكل شقة
+            // $table->unique(['apartment_id', 'is_cover']);
             $table->timestamps();
         });
     }

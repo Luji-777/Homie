@@ -22,7 +22,7 @@ return new class extends Migration
                 'villa'
             ]);
             $table->text('discription');
-            $table->string('city');
+            // $table->string('city');
             $table->string('address');
             $table->float('price_per_day');
             $table->float('price_per_month');

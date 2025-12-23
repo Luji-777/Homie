@@ -22,4 +22,10 @@ class Area extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    // Define relationship to Apartment model
+    public function apartments()
+    {
+        return $this->hasMany(Apartment::class);
+    }
 }

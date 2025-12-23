@@ -22,4 +22,10 @@ class City extends Model
     {
         return $this->hasMany(User::class);
     }
+    
+    // Define relationship to Apartment model through Area
+    public function apartments()
+    {
+        return $this->hasManyThrough(Apartment::class, Area::class);
+    }
 }

@@ -11,7 +11,7 @@ class UpdateApartmentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,15 +22,22 @@ class UpdateApartmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'discription'=>'string',
-            'address'=>'string|max:255',
-            'price_per_day'=>'numeric|min:0',
-            'price_per_month'=>'numeric|min:0',
-            'bedrooms'=>'integer|min:0',
-            'bathrooms'=>'integer|min:0',
-            'wifi'=>'boolean',
-            'garage'=>'boolean',
-            'specifications'=>'string'
+            // 'area_id' => 'integer|exists:areas,id',
+
+            'discription' => 'string',
+            'address' => 'string|max:255',
+            'price_per_day' => 'numeric|min:0',
+            'price_per_month' => 'numeric|min:0',
+            'bedrooms' => 'integer|min:0',
+            'bathrooms' => 'integer|min:0',
+            'wifi' => 'boolean',
+            'garage' => 'boolean',
+            'specifications' => 'string', //غالبا نكبو ما بدنا ياه
+
+            //الصور
+            'images' => 'array|min:1', // على الأقل صورة واحدة عند الإنشاء
+            'images.*' => 'mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'cover_index' => 'integer|min:0' // رقم الصورة اللي بدنا نعملها غلاف (مثلاً 0 = الأولى) من مصفوفة الصور
         ];
     }
 }

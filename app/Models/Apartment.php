@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Apartment extends Model
 {
@@ -24,7 +26,11 @@ class Apartment extends Model
     public function city()
     {
         return $this->hasOneThrough(City::class, Area::class, 'id', 'id', 'area_id', 'city_id');
-    }   
+        /*
+        return $this->belongsTo(City::class, 'area_id')->through('area');
+        // أو أسهل: return $this->area->city(); لكن لو بدك direct
+        */
+    }
 
     // Define relationship to Booking model
     public function booking()
@@ -39,15 +45,15 @@ class Apartment extends Model
     }
 
     // Define relationship to Apartment_image model
-    public function apartment_image()
+    public function apartment_image():HasMany
     {
         return $this->hasMany(Apartment_image::class);
     }
 
     // Define relationship to Apartment_image model for cover image
-    public function isCover()
+    public function isCover():HasOne
     {
-        return $this->hasOne(Apartment_image::class);
+        return $this->hasOne(Apartment_image::class)->where('is_cover', true);
     }
 
     // Define relationship to Favorite model
@@ -66,5 +72,13 @@ class Apartment extends Model
     public function message()
     {
         return $this->hasMany(Message::class);
+    }
+
+
+    // Accessor for cover image URL
+    protected $appends = ['cover_image_url'];
+    public function getCoverImageUrlAttribute()
+    {
+        return $this->coverImage ? asset('storage/' . $this->coverImage->image_path) : null;
     }
 }

@@ -8,6 +8,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Symfony\Component\HttpKernel\Profiler\Profile;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use \Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -46,37 +49,40 @@ class User extends Authenticatable
 
     //-----------------------------
     // Define relationship to Profile model
-    public function profile()
+    public function profile(): HasOne
     {
         return $this->hasOne(Profile::class, 'user_id','id');
     }
 
-    // Define relationship to Apartment model
-    public function apartments()
+
+    /**
+     * The apartments that belong to the user.
+     */
+    public function apartments(): HasMany
     {
         return $this->hasMany(Apartment::class, 'owner_id');
     }
 
     // Define relationship to Booking model
-    public function booking()
+    public function booking(): HasMany
     {
         return $this->hasMany(Booking::class, 'tenant_id');
     }
 
     // Define relationship to Favorite model
-    public function favoriteApartment()
+    public function favoriteApartment(): BelongsToMany
     {
         return $this->belongsToMany(Apartment::class, 'tenant_id', 'favorite', 'apartment_id')->withTimestamps();
     }
 
     // Define relationship to Message model
-    public function sentMessages()
+    public function sentMessages(): HasMany
     {
         return $this->hasMany(Message::class, 'sender_id');
     }
 
     // Define relationship to Message model
-    public function receivedMessages()
+    public function receivedMessages(): HasMany
     {
         return $this->hasMany(Message::class, 'receiver_id');
     }

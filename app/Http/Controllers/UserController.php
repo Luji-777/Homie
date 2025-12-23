@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule; 
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -23,24 +23,24 @@ class UserController extends Controller
             'password' => 'required|string|min:6|max:255|confirmed',
             'birth_date' => 'required|date|before:today',
 
-             // إضافة قواعد التحقق للمحافظة والمنطقة
+            // إضافة قواعد التحقق للمحافظة والمنطقة
             'city_id' => 'required|integer|exists:cities,id',
             'area_id' => [
-                'required', 
-                'integer', 
+                'required',
+                'integer',
                 // التأكد من أن المنطقة المختارة تابعة للمحافظة المختارة
                 Rule::exists('areas', 'id')->where(function ($query) use ($request) {
                     return $query->where('city_id', $request->city_id);
                 })
             ],
-            
+
             'personal_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'id_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $otp = rand(1000, 9999); // توليد رمز تحقق عشوائي من 4 أرقام
         $birthDate = Carbon::createFromFormat('d-m-Y', $request->birth_date)->format('Y-m-d'); // شكل التاريخ
-        
+
         // معالجة صور المستخدم
         $personalPhotoPath = null;
         if ($request->hasFile('personal_photo')) {
@@ -66,8 +66,8 @@ class UserController extends Controller
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'birth_date' => $birthDate,
-            'city_id' => $request->city_id, 
-            'area_id' => $request->area_id,   
+            'city_id' => $request->city_id,
+            'area_id' => $request->area_id,
             'personal_photo' => $personalPhotoPath,
             'id_photo' => $idImagePath
         ]);
@@ -78,7 +78,7 @@ class UserController extends Controller
         // إعادة استجابة بنجاح التسجيل
         return response()->json([
             'message' => 'the account created successfully, Please verify your phone number.',
-            'otp'     => $otp,                          
+            'otp'     => $otp,
             'phone_number'   => $request->phone_number,
             'next_step' => 'verify-otp',
             'access_token' => $token,
@@ -150,22 +150,21 @@ class UserController extends Controller
         ]);
 
         // التحقق من بيانات الدخول
-        if (!Auth::attempt($request->only('phone_number', 'password'))) 
-            {
-                return response()->json([
-                    'message' => 'Invalid login details'
-                ], 401);
-            }
-            // إنشاء توكن جديد للمستخدم
-            $user= User::where('phone_number', $request->phone_number)->first();        
-            $token= $user->createToken('auth_Token')->plainTextToken;
-
-            // إعادة استجابة بنجاح الدخول
+        if (!Auth::attempt($request->only('phone_number', 'password'))) {
             return response()->json([
-                'message' => 'Login successful',
-                'user' => FacadesAuth::user(),
-                'Token' => $token
-            ],201);
+                'message' => 'Invalid login details'
+            ], 401);
+        }
+        // إنشاء توكن جديد للمستخدم
+        $user = User::where('phone_number', $request->phone_number)->first();
+        $token = $user->createToken('auth_Token')->plainTextToken;
+
+        // إعادة استجابة بنجاح الدخول
+        return response()->json([
+            'message' => 'Login successful',
+            'user' => FacadesAuth::user(),
+            'Token' => $token
+        ], 201);
     }
 
     // تسجيل الخروج
@@ -176,8 +175,8 @@ class UserController extends Controller
     {
         // حذف التوكن الحالي
         $request->user()->currentAccessToken()->delete();
-            return response()->json([
+        return response()->json([
             'message' => 'Logout successful'
-        ],204);
+        ], 204);
     }
 }

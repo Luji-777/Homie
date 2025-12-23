@@ -12,8 +12,8 @@ return new class extends Migration
     public function up()
     {
         Schema::table('profiles', function (Blueprint $table) {
-            $table->foreignId('city_id')->nullable()->constrained('cities')->onDelete('set null');  // nullable لو مش مطلوب دائماً
-            $table->foreignId('area_id')->nullable()->constrained('areas')->onDelete('set null');
+            $table->foreignId('city_id')->after('user_id')->nullable()->constrained('cities')->onDelete('set null');  // nullable لو مش مطلوب دائماً
+            $table->foreignId('area_id')->after('user_id')->nullable()->constrained('areas')->onDelete('set null');
         });
     }
 

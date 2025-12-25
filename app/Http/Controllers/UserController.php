@@ -34,6 +34,7 @@ class UserController extends Controller
                 })
             ],
 
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'personal_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'id_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048'
         ]);
@@ -42,10 +43,16 @@ class UserController extends Controller
         $birthDate = Carbon::createFromFormat('d-m-Y', $request->birth_date)->format('Y-m-d'); // شكل التاريخ
 
         // معالجة صور المستخدم
+        $ProfilePhotoPath = 'profiles/default-profile.png'; // الصورة الافتراضية الافتراضية;
+        if ($request->hasFile('profile_photo')) {
+            $ProfilePhotoPath = $request->file('profile_photo')->store('profiles', 'public'); // تخزين الصورة الشخصية
+        }
+
         $personalPhotoPath = null;
         if ($request->hasFile('personal_photo')) {
-            $personalPhotoPath = $request->file('personal_photo')->store('profiles', 'public'); // تخزين الصورة الشخصية
+            $personalPhotoPath = $request->file('personal_photo')->store('personal', 'public'); // تخزين الصورة الشخصية
         }
+
         $idImagePath = null;
         if ($request->hasFile('id_photo')) {
             $idImagePath = $request->file('id_photo')->store('identities', 'public'); // تخزين صورة الهوية
@@ -68,6 +75,7 @@ class UserController extends Controller
             'birth_date' => $birthDate,
             'city_id' => $request->city_id,
             'area_id' => $request->area_id,
+            'profile_photo' => $ProfilePhotoPath,
             'personal_photo' => $personalPhotoPath,
             'id_photo' => $idImagePath
         ]);

@@ -21,18 +21,23 @@ return new class extends Migration
                 'house',
                 'villa'
             ]);
-            $table->text('discription');
-            // $table->string('city');
+            $table->text('discription');                                                
+            $table->string('title');
             $table->string('address');
             $table->float('price_per_day');
             $table->float('price_per_month');
+            $table->float('space');
+            $table->string('floor');
+            $table->integer('rooms');
             $table->integer('bedrooms');
             $table->integer('bathrooms');
-            $table->boolean('wifi');
-            $table->boolean('garage');
-            $table->json('specifications')->nullable(); // لتخزين مواصفات إضافية كـ JSON
-            $table->boolean('is_approved')->nullable()->default(false);
+            $table->boolean('wifi');           
+            $table->boolean('solar');
 
+            // $table->boolean('garage');
+            // $table->json('specifications')->nullable(); // لتخزين مواصفات إضافية كـ JSON
+            
+            $table->boolean('is_approved')->nullable()->default(false);
             $table->string('status')->nullable();
             $table->boolean('is_available')->default(true)->nullable(); // يا هيك يا أما نحط الحالة تبعها بس الحالة حتكون string
 

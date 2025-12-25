@@ -216,7 +216,7 @@ h1 {
                     <thead class="table-dark">
                         <tr>
                             <th>الاسم</th>
-                            <th>البريد الإلكتروني</th>
+                            <th>رقم الموبايل</th>
                             <th>الحالة</th>
                             <th>الإجراءات</th>
                         </tr>
@@ -225,7 +225,7 @@ h1 {
                         <?php $__empty_1 = true; $__currentLoopData = $pendingUsers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr>
                                 <td><?php echo e($user->name); ?></td>
-                                <td><?php echo e($user->email); ?></td>
+                                <td><?php echo e($user->phone_number); ?></td>
                                 <td>منتظر</td>
                                 <td>
                                     <form action="/admin/approve/<?php echo e($user->id); ?>" method="POST" style="display:inline;">
@@ -257,7 +257,7 @@ h1 {
                     <thead class="table-dark">
                         <tr>
                             <th>الاسم</th>
-                            <th>البريد الإلكتروني</th>
+                            <th> رقم الموبايل</th>
                             <th>الحالة</th>
                             <th>الإجراءات</th>
                         </tr>
@@ -266,7 +266,7 @@ h1 {
                         <?php $__empty_1 = true; $__currentLoopData = $allUsers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr>
                                 <td><?php echo e($user->name); ?></td>
-                                <td><?php echo e($user->email); ?></td>
+                                <td><?php echo e($user->phone_number); ?></td>
                                 <td>
                                     <?php if($user->is_verified): ?>
                                         <span class="badge bg-success">مقبول</span>

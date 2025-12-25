@@ -10,6 +10,9 @@ use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
 
+use Illuminate\Support\Facades\Storage;
+
+
 class ApartmentController extends Controller
 {
 
@@ -76,43 +79,64 @@ class ApartmentController extends Controller
     // Update the specified resource in storage.
     public function update(UpdateApartmentRequest $request, int $id)
     {
+        // $owner_id = Auth::user()->id; // أصلحت FacadesAuth → Auth
         $owner_id = FacadesAuth::user()->id;
 
-        // جلب الشقة مع التأكد من وجودها
+
         $apartment = Apartment::findOrFail($id);
 
-        // التحقق من الملكية
         if ($apartment->owner_id !== $owner_id) {
-            return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // تحديث البيانات الأساسية للشقة (بدون الصور)
-        $apartment->update($request->validated());
+        // جلب البيانات المصادق عليها (للحقول النصية فقط)
+        $validatedData = $request->validated();
 
-        // إذا تم إرسال صور جديدة → نحذف القديمة ونرفع الجديدة
-        if ($request->hasFile('images')) {
-            // حذف كل الصور المرتبطة بالشقة (بما فيها الملفات من التخزين إذا بدك)
+        // استخراج الملفات و cover_index مباشرة من الـ request (مش من validated)
+        $newImages = $request->file('images'); // هنا المفتاح: file() مش input()
+        $coverIndex = $request->input('cover_index'); // هنا ممكن يكون null
+
+        // إزالة الحقول اللي ما بدنا نحفظها في جدول apartments (لو كانت موجودة)
+        unset($validatedData['images'], $validatedData['cover_index']);
+
+        // تحديث الحقول النصية
+        $apartment->update($validatedData);
+
+        $kk = 0;
+
+        // 1. إذا وجدت صور جديدة
+        if ($request->hasFile('images')) {  // أفضل من !empty($newImages)
+            $kk = 111;
+
+            // حذف الملفات القديمة من التخزين
+            foreach ($apartment->apartment_image as $image) {
+                Storage::disk('public')->delete($image->image_path);
+            }
+
+            // حذف السجلات من قاعدة البيانات
             $apartment->apartment_image()->delete();
-            // أو إذا استخدمت alias images():
-            // $apartment->images()->delete();
 
-            // رفع الصور الجديدة مع تحديد الغلاف
-            $coverIndex = $request->input('cover_index', 0);
-            $this->uploadImages($apartment, $request->file('images'), (int)$coverIndex);
+            // رفع الصور الجديدة
+            $this->uploadImages($apartment, $newImages, $coverIndex ?? 0);
         }
+        // 2. إذا ما في صور جديدة لكن في cover_index
+        elseif ($coverIndex !== null) {
+            $kk = 222;
+            $this->setCoverImage($apartment, (int)$coverIndex);
+        }
+        // 3. ما في تغيير على الصور
 
-        // تحميل العلاقات المطلوبة لإرجاع البيانات كاملة ومحدثة
-        $apartment->load([
-            'area.city',
-            'apartment_image',     // أو 'images' إذا أضفت الـ alias
-            'isCover'           // تأكد إنك أضفت هالعلاقة في الموديل
-        ]);
+        $apartment->load(['area.city', 'apartment_image', 'isCover']);
 
         return response()->json([
             'message'   => 'Apartment updated successfully.',
-            'apartment' => $apartment
+            'apartment' => $apartment,
+            'kk'        => $kk,
+            'debug'     => [  // مؤقت للتصحيح
+                'has_images' => $request->hasFile('images'),
+                'cover_index' => $coverIndex,
+                'images_count' => $newImages ? count($newImages) : 0
+            ]
         ], 200);
     }
 
@@ -137,11 +161,42 @@ class ApartmentController extends Controller
 
 
 
+
+
+
     public function filter(ApartmentFilterRequest $request)
     {
+
         $query = Apartment::query()
             ->where('is_approved', false) // فقط الشقق المعتمدة يعني لازم نحطها ترووو بس مشان التجريب حاليا
             ->with(['area.city']); // لإرجاع اسم المنطقة والمحافظة مع الشقة
+
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        // فلتر حسب نوع الإيجار (rent_type)
+        if ($request->filled('rent_type')) {
+            if ($request->rent_type === 'day') {
+                // فلتر حسب السعر اليومي
+                if ($request->filled('price_min')) {
+                    $query->where('price_per_day', '>=', $request->price_min);
+                }
+                if ($request->filled('price_max')) {
+                    $query->where('price_per_day', '<=', $request->price_max);
+                }
+            } elseif ($request->rent_type === 'month') {
+                // فلتر حسب السعر الشهري
+                if ($request->filled('price_min')) {
+                    $query->where('price_per_month', '>=', $request->price_min);
+                }
+                if ($request->filled('price_max')) {
+                    $query->where('price_per_month', '<=', $request->price_max);
+                }
+            }
+        }
+
 
         // فلتر حسب المحافظة (city_id)
         if ($request->filled('city_id')) {
@@ -155,18 +210,11 @@ class ApartmentController extends Controller
             $query->where('area_id', $request->area_id);
         }
 
-        // فلتر حسب رينج السعر
-        if ($request->filled('price_min')) {
-            $query->where('price_per_day', '>=', $request->price_min);
-        }
 
-        if ($request->filled('price_max')) {
-            $query->where('price_per_day', '<=', $request->price_max);
-        }
 
         // فلتر حسب عدد الغرف
         if ($request->filled('rooms')) {
-            $query->where('bedrooms', $request->rooms);
+            $query->where('rooms', $request->rooms);
         }
 
         // فلتر حسب وجود WiFi
@@ -175,18 +223,48 @@ class ApartmentController extends Controller
             $query->where('wifi', $Wifi);
         }
 
+        // فلتر حسب وجود سولار
+        if ($request->filled('solar')) {
+            $Solar = filter_var($request->solar, FILTER_VALIDATE_BOOLEAN);
+            $query->where('solar', $Solar);
+        }
+
 
 
         // ترتيب حسب الأحدث أولاً (اختياري)
-        $apartments = $query->latest()->paginate(2); // 12 شقة في الصفحة، غيّر الرقم كيف ما بدك
+        $apartments = $query->latest()->paginate(12); // 12 شقة في الصفحة، غيّر الرقم كيف ما بدك
         return response()->json([
             'message' => 'Apartments retrieved successfully.',
             'data'    => $apartments,
-            'filters' => $request->only(['city_id', 'area_id', 'price_min', 'price_max', 'rooms', 'wifi'])
+            'filters' => $request->only(['type', 'rent_type', 'city_id', 'area_id', 'price_min', 'price_max', 'rooms', 'wifi'])
         ], 200);
     }
 
 
+    // دالة مساعدة لتعيين صورة الغلاف
+    private function setCoverImage(Apartment $apartment, int $coverIndex)
+    {
+        $images = $apartment->apartment_image;
+
+        if ($images->isEmpty()) {
+            return; // لا صور لتحديد غلاف
+        }
+
+        // إلغاء الغلاف الحالي
+        $images->each(function ($image) {
+            $image->is_cover = false;
+            $image->save();
+        });
+
+        // تحديد الغلاف الجديد
+        if (isset($images[$coverIndex])) {
+            $images[$coverIndex]->is_cover = true;
+            $images[$coverIndex]->save();
+        } else {
+            // إذا كان المؤشر خارج النطاق → اجعل الصورة الأولى غلافًا
+            $images->first()->update(['is_cover' => true]);
+        }
+    }
 
     // دالة مساعدة لتحميل الصور
     private function uploadImages(Apartment $apartment, array $images, int $coverIndex = 0): void

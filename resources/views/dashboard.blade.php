@@ -215,7 +215,7 @@ h1 {
                     <thead class="table-dark">
                         <tr>
                             <th>الاسم</th>
-                            <th>البريد الإلكتروني</th>
+                            <th>رقم الموبايل</th>
                             <th>الحالة</th>
                             <th>الإجراءات</th>
                         </tr>
@@ -224,7 +224,7 @@ h1 {
                         @forelse ($pendingUsers as $user)
                             <tr>
                                 <td>{{ $user->name }}</td>
-                                <td>{{ $user->email }}</td>
+                                <td>{{ $user->phone_number }}</td>
                                 <td>منتظر</td>
                                 <td>
                                     <form action="/admin/approve/{{ $user->id }}" method="POST" style="display:inline;">
@@ -256,7 +256,7 @@ h1 {
                     <thead class="table-dark">
                         <tr>
                             <th>الاسم</th>
-                            <th>البريد الإلكتروني</th>
+                            <th> رقم الموبايل</th>
                             <th>الحالة</th>
                             <th>الإجراءات</th>
                         </tr>
@@ -265,7 +265,7 @@ h1 {
                         @forelse ($allUsers as $user)
                             <tr>
                                 <td>{{ $user->name }}</td>
-                                <td>{{ $user->email }}</td>
+                                <td>{{ $user->phone_number }}</td>
                                 <td>
                                     @if ($user->is_verified)
                                         <span class="badge bg-success">مقبول</span>

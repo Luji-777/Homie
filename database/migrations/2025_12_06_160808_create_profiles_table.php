@@ -26,6 +26,7 @@ return new class extends Migration
 
             $table->string('id_photo')->nullable();
             $table->string('personal_photo')->nullable();
+            $table->string('profile_photo')->nullable();
 
             $table->timestamps();
         });

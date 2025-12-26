@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Http\Foundation\Auth\Access\AuthorizesRequests;
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ApartmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CityController;
@@ -22,3 +24,5 @@ Route::apiResource('apartments',ApartmentController::class)->middleware('auth:sa
 
 Route::get('/cities', [CityController::class, 'cities']);
 Route::get('/areas', [CityController::class, 'areas']);
+
+Route::post('/apartments/{apartment}/book', [BookingController::class, 'store'])->middleware('auth:sanctum');

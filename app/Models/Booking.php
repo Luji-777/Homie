@@ -12,7 +12,7 @@ class Booking extends Model
     public function tenant()
     {
         return $this->belongsTo(User::class, 'tenant_id');
-    }   
+    }
 
     // Define relationship to Apartment model
     public function apartment()
@@ -24,5 +24,11 @@ class Booking extends Model
     public function review()
     {
         return $this->hasOne(Review::class);
+    }
+
+    //user bookings
+    public function forUser($query,User $user){
+        return $query->where('tenant_id',$user->id)
+                    ->orwhere('owner_id',$user->id);
     }
 }

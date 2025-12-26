@@ -6,6 +6,8 @@ use App\Http\Requests\StoreApartmentRequest;
 use App\Http\Requests\UpdateApartmentRequest;
 use App\Http\Requests\ApartmentFilterRequest;
 use App\Models\Apartment;
+use App\Models\Booking;
+use App\Models\Review;
 use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
@@ -61,21 +63,73 @@ class ApartmentController extends Controller
 
 
 
-
-
     // Display the specified resource.
     public function show(int $id)
     {
-        $apartment = Apartment::with(['area.city'])->findOrFail($id);
+        $apartment = Apartment::with([
+            'owner.profile',
+            'area.city',
+            'apartment_image',
+            'isCover',
+            'review.tenant'  // جديد
+        ])->findOrFail($id);
+
+
+        // تفاصيل المالك
+        $apartment->owner = $apartment->owner()->select('id', 'name', 'phone_number')->first();
+        // تفاصيل البروفايل
+        $apartment->owner->profile = $apartment->owner->profile()->select('first_name', 'last_name', 'profile_photo')->first();
+
 
         return response()->json([
-            'apartment' => $apartment
-        ], 201);
+            'status' => '',
+            'data' => [
+                'apartment' => [
+                    'id' => $apartment->id,
+                    'type' => ucfirst($apartment->type),
+                    'title' => $apartment->title,
+                    'description' => $apartment->discription,
+                    'rent_price' => $apartment->price_per_month,
+                    'rent_type' => 'monthly',
+                    'images' => $apartment->apartment_image->map(function ($image) {
+                        return asset('storage/' . $image->image_path);
+                    })->toArray(),
+                    'address' => [
+                        'city_name' => $apartment->area->city->name,
+                        'area_name' => $apartment->area->name,
+                        'detailed_address' => $apartment->address,
+                    ],
+                    'amenities' => [
+                        'bedrooms'   => $apartment->bedrooms,
+                        'bathrooms'  => $apartment->bathrooms,
+                        'space'      => (float) $apartment->space,
+                        'floor'      => $apartment->floor,
+                        'has_wifi'   => (bool) $apartment->wifi,
+                        'has_solar'  => (bool) $apartment->solar,
+                    ],
+                    'owner' => [
+                        'id'             => $apartment->owner->id,
+                        'full_name'      => $apartment->owner->profile->first_name . ' ' . $apartment->owner->profile->last_name,
+                        'phone_number'   => $apartment->owner->phone_number ?? null,
+                        // 'bio'            => $apartment->owner->bio ?? null,    // إذا عندك عمود bio في users
+                        'profile_image'  => $apartment->owner->profile->profile_photo ?? null,
+                    ],
+                    'reviews' => $apartment->review->map(function ($review) {
+                        return [
+                            'user_name'    => $review->tenant->name ?? 'مستخدم مجهول',
+                            'user_image'   => $review->tenant->profile->profile_image ?? null, // غيّر profile_image لاسم العمود الصحيح عندك في users (مثل avatar أو photo)
+                            'comment'      => $review->comment ?? '',
+                            'rating_value' => (float) $review->rating,
+                            'created_at'   => $review->created_at->format('Y-m-d'),
+                        ];
+                    })->toArray(),
+                ]
+            ]
+        ], 200);
     }
 
 
 
-    // Update the specified resource in storage.
     // Update the specified resource in storage.
     public function update(UpdateApartmentRequest $request, int $id)
     {
@@ -161,9 +215,6 @@ class ApartmentController extends Controller
 
 
 
-
-
-
     public function filter(ApartmentFilterRequest $request)
     {
 
@@ -241,6 +292,7 @@ class ApartmentController extends Controller
     }
 
 
+
     // دالة مساعدة لتعيين صورة الغلاف
     private function setCoverImage(Apartment $apartment, int $coverIndex)
     {
@@ -291,6 +343,273 @@ class ApartmentController extends Controller
         }
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+public function favorites(int $id)
+    {
+        $apartment = Apartment::with(['favorites'])->findOrFail($id);
+
+        return response()->json([
+            'message' => 'Apartment favorites retrieved successfully.',
+            'data' => $apartment->favorites
+        ], 200);
+    }
+
+    public function favoriteCount(int $id)
+    {
+        $apartment = Apartment::findOrFail($id);
+        $favoriteCount = $apartment->favorites()->count();
+
+        return response()->json([
+            'message' => 'Apartment favorite count retrieved successfully.',
+            'data' => $favoriteCount
+        ], 200);
+    }
+
+    public function setFavoriteApartment(int $id){
+        
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    public function apartmentDetails($id)
+    {
+        $apartment = Apartment::with(['area.city', 'apartment_image', 'isCover'])->findOrFail($id);
+
+        return response()->json([
+            'message' => 'Apartment details retrieved successfully.',
+            'data' => $apartment
+        ], 200);
+    }
+
+
+
+
+
+    // Get all reviews for a specific apartment
+    public function reviews($id)
+    {
+        $apartment = Apartment::with(['reviews'])->findOrFail($id);
+
+        return response()->json([
+            'message' => 'Apartment reviews retrieved successfully.',
+            'data' => $apartment->reviews
+        ], 200);
+    }
+
+
+
+
+    // Get total reviews and average rating for a specific apartment
+    public function apartmentRatingsSummary($id)
+    {
+        $apartment = Apartment::findOrFail($id);
+        $totalReviews = $apartment->reviews()->count();
+        $averageRating = $apartment->reviews()->avg('rating');
+
+        return response()->json([
+            'message' => 'Apartment ratings summary retrieved successfully.',
+            'data' => [
+                'total_reviews' => $totalReviews,
+                'average_rating' => $averageRating
+            ]
+        ], 200);
+    }
+
+
+    // Check if a tenant has reviewed a specific apartment
+    public function hasTenantReviewed($apartment_id, $tenant_id)
+    {
+        $apartment = Apartment::findOrFail($apartment_id);
+        $hasReviewed = $apartment->reviews()->where('tenant_id', $tenant_id)->exists();
+
+        return response()->json([
+            'message' => 'Tenant review status retrieved successfully.',
+            'data' => $hasReviewed
+        ], 200);
+    }
+
+
+
+    // Tenant submits a review for an apartment
+    public function reviewApartment(Request $request, $apartment_id)
+    {
+        $tenant_id = FacadesAuth::user()->id;
+
+        // تحقق مما إذا كان المستأجر قد قام بمراجعة هذه الشقة بالفعل
+        $apartment = Apartment::findOrFail($apartment_id);
+        // تحقق اذا كان المستخدم قد قام بحجز هذه الشقة
+        $hasBooked = Booking::where('apartment_id', $apartment_id)->where('tenant_id', $tenant_id)->exists();
+
+        if (!$hasBooked) {
+            return response()->json([
+                'message' => 'You have not booked this apartment.'
+            ], 400);
+        }
+
+        $hasReviewed = $apartment->reviews()->where('tenant_id', $tenant_id)->exists();
+
+        if ($hasReviewed) {
+            return response()->json([
+                'message' => 'You have already reviewed this apartment.'
+            ], 400);
+        }
+
+        // إنشاء المراجعة الجديدة
+        $validatedData = $request->validate([
+            'rating' => 'required|numeric|min:1|max:5',
+            'comment' => 'nullable|string',
+            'booking_id' => 'required|exists:bookings,id'
+        ]);
+
+        $review = Review::create([
+            'apartment_id' => $apartment_id,
+            'tenant_id' => $tenant_id,
+            'booking_id' => $validatedData['booking_id'],
+            'rating' => $validatedData['rating'],
+            'comment' => $validatedData['comment'] ?? null
+        ]);
+
+        return response()->json([
+            'message' => 'Review submitted successfully.',
+            'data' => $review
+        ], 201);
+    }
+
+    public function bookedApartments()
+    {
+        $tenant_id = FacadesAuth::user()->id;
+
+        $bookedApartments = Apartment::whereHas('bookings', function ($query) use ($tenant_id) {
+            $query->where('tenant_id', $tenant_id);
+        })->with(['area.city', 'apartment_image', 'isCover'])->get();
+
+        return response()->json([
+            'message' => 'Booked apartments retrieved successfully.',
+            'data' => $bookedApartments
+        ], 200);
+    }
+
+
+
+
+
+
+
+
+    public function availableApartments()
+    {
+        $tenant_id = FacadesAuth::user()->id;
+
+        $availableApartments = Apartment::whereDoesntHave('bookings', function ($query) use ($tenant_id) {
+            $query->where('tenant_id', $tenant_id);
+        })->with(['area.city', 'apartment_image', 'isCover'])->get();
+
+        return response()->json([
+            'message' => 'Available apartments retrieved successfully.',
+            'data' => $availableApartments
+        ], 200);
+    }
+
+    public function rentedApartments()
+    {
+        $tenant_id = FacadesAuth::user()->id;
+
+        $rentedApartments = Apartment::whereHas('bookings', function ($query) use ($tenant_id) {
+            $query->where('tenant_id', $tenant_id)
+                ->where('status', 'completed'); // فقط الإيجارات المكتملة
+        })->with(['area.city', 'apartment_image', 'isCover'])->get();
+
+        return response()->json([
+            'message' => 'Rented apartments retrieved successfully.',
+            'data' => $rentedApartments
+        ], 200);
+    }
+
+    public function myApartments()
+    {
+        $owner_id = FacadesAuth::user()->id;
+
+        $myApartments = Apartment::where('owner_id', $owner_id)
+            ->with(['area.city', 'apartment_image', 'isCover'])
+            ->get();
+
+        return response()->json([
+            'message' => 'My apartments retrieved successfully.',
+            'data' => $myApartments
+        ], 200);
+    }
+
+    public  function myApprovedApartments()
+    {
+        $owner_id = FacadesAuth::user()->id;
+
+        $myApprovedApartments = Apartment::where('owner_id', $owner_id)
+            ->where('is_approved', true)
+            ->with(['area.city', 'apartment_image', 'isCover'])
+            ->get();
+
+        return response()->json([
+            'message' => 'My approved apartments retrieved successfully.',
+            'data' => $myApprovedApartments
+        ], 200);
+    }
 
 
     /*

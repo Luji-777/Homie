@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Symfony\Component\HttpKernel\Profiler\Profile;
+// use Symfony\Component\HttpKernel\Profiler\Profile;
+use App\Models\Profile;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use \Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -15,7 +16,7 @@ use \Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable,HasApiTokens;
+    use HasFactory, Notifiable, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -51,7 +52,7 @@ class User extends Authenticatable
     // Define relationship to Profile model
     public function profile(): HasOne
     {
-        return $this->hasOne(Profile::class, 'user_id','id');
+        return $this->hasOne(Profile::class, 'user_id', 'id');
     }
 
 
@@ -69,6 +70,12 @@ class User extends Authenticatable
         return $this->hasMany(Booking::class, 'tenant_id');
     }
 
+    // Define relationship to Review model
+    public function reviewsAsTenant()
+    {
+        return $this->hasMany(Review::class, 'tenant_id');
+    }
+    
     // Define relationship to Favorite model
     public function favoriteApartment(): BelongsToMany
     {

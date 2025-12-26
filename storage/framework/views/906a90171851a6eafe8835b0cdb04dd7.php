@@ -184,7 +184,25 @@ h1 {
 <body class="bg-light">
     <div class="container mt-5">
     <h1 class="text-center mb-4">لوحة تحكم الأدمن</h1>
-
+            <!-- شريط البحث -->
+    <div class="row mb-4">
+        <div class="col-md-6 mx-auto">
+            <form action="<?php echo e(route('admin.dashboard')); ?>" method="GET" class="d-flex">
+                <input 
+                    type="text" 
+                    name="search" 
+                    class="form-control me-2" 
+                    placeholder="ابحث بالاسم أو رقم الموبايل..." 
+                    value="<?php echo e(request('search')); ?>"
+                    style="border-radius: 25px; padding: 12px 20px;">
+                <button type="submit" class="btn btn-primary" style="border-radius: 25px; padding: 12px 24px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
     <?php if(session('success')): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <?php echo e(session('success')); ?>
@@ -203,6 +221,16 @@ h1 {
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
                 جميع المستخدمين
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pending-apartments-tab" data-bs-toggle="tab" data-bs-target="#pending-apartments" type="button" role="tab">
+                الشقق المنتظرة
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="all-apartments-tab" data-bs-toggle="tab" data-bs-target="#all-apartments" type="button" role="tab">
+                جميع الشقق
             </button>
         </li>
     </ul>
@@ -291,6 +319,108 @@ h1 {
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
                                 <td colspan="4" class="text-center">لا يوجد مستخدمين</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- تبويب الشقق المنتظرة -->
+        <div class="tab-pane fade" id="pending-apartments" role="tabpanel">
+            <h3>الشقق المنتظرة الموافقة</h3>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID الشقة</th>
+                            <th>العنوان</th>
+                            <th>المالك</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php $__empty_1 = true; $__currentLoopData = $pendingApartments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $apartment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                            <tr>
+                                <td><?php echo e($apartment->id); ?></td>
+                                <td>
+                                    <a href="<?php echo e(route('admin.apartment.details', $apartment->id)); ?>" class="text-primary fw-bold">
+                                        <?php echo e($apartment->title); ?>
+
+                                    </a>
+                                </td>                                <td><?php echo e($apartment->owner->name ?? 'غير معروف'); ?></td>
+                                <td><span class="badge bg-warning">منتظر</span></td>
+                                <td>
+                                    <form action="<?php echo e(route('admin.approve.apartment', $apartment->id)); ?>" method="POST" style="display:inline;">
+                                        <?php echo csrf_field(); ?>
+                                        <button type="submit" class="btn btn-success btn-sm">موافقة</button>
+                                    </form>
+                                    <form action="<?php echo e(route('admin.delete.apartment', $apartment->id)); ?>" method="POST" style="display:inline;">
+                                        <?php echo csrf_field(); ?>
+                                        <?php echo method_field('DELETE'); ?>
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف الشقة؟')">حذف</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                            <tr>
+                                <td colspan="5" class="text-center">لا توجد شقق منتظرة الموافقة</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- تبويب جميع الشقق -->
+        <div class="tab-pane fade" id="all-apartments" role="tabpanel">
+            <h3>جميع الشقق</h3>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID الشقة</th>
+                            <th>العنوان</th>
+                            <th>المالك</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php $__empty_1 = true; $__currentLoopData = $allApartments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $apartment): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                            <tr>
+                                <td><?php echo e($apartment->id); ?></td>
+                                <td>
+                                    <a href="<?php echo e(route('admin.apartment.details', $apartment->id)); ?>" class="text-primary fw-bold">
+                                        <?php echo e($apartment->title); ?>
+
+                                    </a>
+                                </td>
+                                <td><?php echo e($apartment->owner->name ?? 'غير معروف'); ?></td>
+                                <td>
+                                    <?php if($apartment->is_approved): ?>
+                                        <span class="badge bg-success">مقبولة</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-warning">منتظر</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if(!$apartment->is_approved): ?>
+                                        <form action="<?php echo e(route('admin.approve.apartment', $apartment->id)); ?>" method="POST" style="display:inline;">
+                                            <?php echo csrf_field(); ?>
+                                            <button type="submit" class="btn btn-success btn-sm">موافقة</button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <form action="<?php echo e(route('admin.delete.apartment', $apartment->id)); ?>" method="POST" style="display:inline;">
+                                        <?php echo csrf_field(); ?>
+                                        <?php echo method_field('DELETE'); ?>
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف الشقة؟')">حذف</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                            <tr>
+                                <td colspan="5" class="text-center">لا توجد شقق</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>

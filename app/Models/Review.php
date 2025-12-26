@@ -14,6 +14,12 @@ class Review extends Model
         return $this->belongsTo(Apartment::class);
     }
 
+    // Define relationship to User model (tenant)
+    public function tenant()
+    {
+        return $this->belongsTo(User::class, 'tenant_id');
+    }
+
     // Define relationship to Booking model
     public function booking()
     {

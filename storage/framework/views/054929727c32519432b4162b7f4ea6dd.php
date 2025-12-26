@@ -186,7 +186,6 @@
 
             <div class="info-grid mb-5">
                 <div class="row g-4">
-                    
                     <div class="col-md-4"><div class="info-item text-center"><strong>المالك</strong><br><h4><?php echo e($apartment->owner->name ?? 'غير معروف'); ?></h4></div></div>
                     <div class="col-md-4"><div class="info-item text-center"><strong>النوع</strong><br><h4><?php echo e(ucfirst($apartment->type)); ?></h4></div></div>
                     <div class="col-md-4"><div class="info-item text-center"><strong>المساحة</strong><br><h4><?php echo e($apartment->space); ?> م²</h4></div></div>

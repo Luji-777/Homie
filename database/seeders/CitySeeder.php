@@ -2,86 +2,160 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\City;
 use App\Models\Area;
 
 class CitySeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-     // إنشاء المحافظات
-        $damascus = City::create(['name' => 'دمشق']);
-        $aleppo = City::create(['name' => 'حلب']);
-        $homs = City::create(['name' => 'حمص']);
-        $lattakia = City::create(['name' => 'اللاذقية']);
-        $tartous = City::create(['name' => 'طرطوس']);
-        $idleb = City::create(['name' => 'إدلب']);
-        $hama = City::create(['name' => 'حماة']);
-        $hasaka = City::create(['name' => 'الحسكة']);
-        $daraa = City::create(['name' => 'درعا']);
-        $sweda = City::create(['name' => 'السويداء']);
-        $deralzor = City::create(['name' => 'ديرالزور']);
-        $raka = City::create(['name' => 'الرقة']);
-        $qunaitera = City::create(['name' => 'القنيطرة']);
+        // المحافظات
+        $damascus   = City::create(['name' => 'دمشق']);
+        $aleppo     = City::create(['name' => 'حلب']);
+        $homs       = City::create(['name' => 'حمص']);
+        $lattakia   = City::create(['name' => 'اللاذقية']);
+        $tartous    = City::create(['name' => 'طرطوس']);
+        $idleb      = City::create(['name' => 'إدلب']);
+        $hama       = City::create(['name' => 'حماة']);
+        $hasaka     = City::create(['name' => 'الحسكة']);
+        $daraa      = City::create(['name' => 'درعا']);
+        $sweda      = City::create(['name' => 'السويداء']);
+        $deralzor   = City::create(['name' => 'دير الزور']);
+        $raka       = City::create(['name' => 'الرقة']);
+        $qunaitera  = City::create(['name' => 'القنيطرة']);
 
+        // ================= دمشق =================
+        $damascusAreas = [
+            'المزة', 'المالكي', 'أبو رمانة', 'المهاجرين', 'ركن الدين',
+            'القصاع', 'باب توما', 'باب شرقي', 'البرامكة',
+            'كفرسوسة', 'دمر', 'مشروع دمر', 'جرمانا',
+            'الزاهرة', 'الميدان', 'الشعلان'
+        ];
 
-        // إنشاء مناطق تابعة لدمشق
-        Area::create(['name' => 'المزة', 'city_id' => $damascus->id]);
-        Area::create(['name' => 'المالكي', 'city_id' => $damascus->id]);
+        foreach ($damascusAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $damascus->id]);
+        }
 
-        // إنشاء مناطق تابعة لحلب
-        Area::create(['name' => 'السليمانية', 'city_id' => $aleppo->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $aleppo->id]);
+        // ================= حلب =================
+        $aleppoAreas = [
+            'السليمانية', 'العزيزية', 'الجميلية', 'الشارقة',
+            'صلاح الدين', 'السكري', 'الحمدانية',
+            'الأنصاري', 'الزهراء', 'الأشرفية'
+        ];
 
-        // إنشاء مناطق تابعة لحمص
-        Area::create(['name' => 'السليمانية', 'city_id' => $homs->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $homs->id]);
+        foreach ($aleppoAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $aleppo->id]);
+        }
 
-        // إنشاء مناطق تابعة لاللاذقية
-        Area::create(['name' => 'السليمانية', 'city_id' => $lattakia->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $lattakia->id]);
+        // ================= حمص =================
+        $homsAreas = [
+            'الحميدية', 'الوعر', 'كرم الشامي', 'باب السباع',
+            'باب الدريب', 'الخالدية', 'القصور'
+        ];
 
-        // إنشاء مناطق تابعة لطرطوس
-        Area::create(['name' => 'السليمانية', 'city_id' => $tartous->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $tartous->id]);
+        foreach ($homsAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $homs->id]);
+        }
 
-        // إنشاء مناطق تابعة لإدلب
-        Area::create(['name' => 'السليمانية', 'city_id' => $idleb->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $idleb->id]);
+        // ================= اللاذقية =================
+        $lattakiaAreas = [
+            'الصليبة', 'الرمل الجنوبي', 'الرمل الشمالي',
+            'مشروع الزراعة', 'دمسرخو', 'الزقزقانية'
+        ];
 
-        // إنشاء مناطق تابعة لحماة
-        Area::create(['name' => 'السليمانية', 'city_id' => $hama->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $hama->id]);
+        foreach ($lattakiaAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $lattakia->id]);
+        }
 
-        // إنشاء مناطق تابعة للحسكة
-        Area::create(['name' => 'السليمانية', 'city_id' => $hasaka->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $hasaka->id]);
+        // ================= طرطوس =================
+        $tartousAreas = [
+            'الكرامة', 'الشيخ سعد', 'القدموس',
+            'صافيتا', 'بانياس'
+        ];
 
-        // إنشاء مناطق تابعة لدرعا
-        Area::create(['name' => 'السليمانية', 'city_id' => $daraa->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $daraa->id]);
+        foreach ($tartousAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $tartous->id]);
+        }
 
-        // إنشاء مناطق تابعة للسويداء
-        Area::create(['name' => 'السليمانية', 'city_id' => $sweda->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $sweda->id]);
+        // ================= إدلب =================
+        $idlebAreas = [
+            'المدينة', 'سراقب', 'معرة النعمان',
+            'أريحا', 'الدانا'
+        ];
 
-        // إنشاء مناطق تابعة لديرالزور
-        Area::create(['name' => 'السليمانية', 'city_id' => $deralzor->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $deralzor->id]);
-        
-        // إنشاء مناطق تابعة للرقة
-        Area::create(['name' => 'السليمانية', 'city_id' => $raka->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $raka->id]);
+        foreach ($idlebAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $idleb->id]);
+        }
 
-        // إنشاء مناطق تابعة للقنيطرة
-        Area::create(['name' => 'السليمانية', 'city_id' => $qunaitera->id]);
-        Area::create(['name' => 'العزيزية', 'city_id' => $qunaitera->id]);
+        // ================= حماة =================
+        $hamaAreas = [
+            'المرابط', 'القصور', 'الحاضر',
+            'السوق', 'طريق حلب'
+        ];
 
-        //
+        foreach ($hamaAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $hama->id]);
+        }
+
+        // ================= الحسكة =================
+        $hasakaAreas = [
+            'القامشلي', 'رأس العين', 'الشدادي',
+            'الدرباسية', 'المالكية'
+        ];
+
+        foreach ($hasakaAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $hasaka->id]);
+        }
+
+        // ================= درعا =================
+        $daraaAreas = [
+            'درعا البلد', 'درعا المحطة',
+            'نوى', 'طفس', 'الصنمين'
+        ];
+
+        foreach ($daraaAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $daraa->id]);
+        }
+
+        // ================= السويداء =================
+        $swedaAreas = [
+            'شهبا', 'صلخد', 'القريا',
+            'المزرعة', 'عرمان'
+        ];
+
+        foreach ($swedaAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $sweda->id]);
+        }
+
+        // ================= دير الزور =================
+        $deralzorAreas = [
+            'الحميدية', 'الجبيلة', 'الحويقة',
+            'الموظفين', 'الرصافة'
+        ];
+
+        foreach ($deralzorAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $deralzor->id]);
+        }
+
+        // ================= الرقة =================
+        $rakaAreas = [
+            'المنصور', 'الرميلة',
+            'الدرعية', 'المشلب'
+        ];
+
+        foreach ($rakaAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $raka->id]);
+        }
+
+        // ================= القنيطرة =================
+        $qunaiteraAreas = [
+            'خان أرنبة', 'جباتا الخشب',
+            'مسعدة', 'حضر'
+        ];
+
+        foreach ($qunaiteraAreas as $area) {
+            Area::create(['name' => $area, 'city_id' => $qunaitera->id]);
+        }
     }
 }

@@ -9,25 +9,8 @@ use Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         // 1. التحقق من البيانات الواردة
@@ -105,35 +88,43 @@ class ReviewController extends Controller
         ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+
+
+    public function show(int $id)
     {
-        //
+        // عرض كل التقييمات الخاصة بشقة معينة
+        $reviews = Review::where('apartment_id', $id)
+            ->with('tenant') // جلب بيانات المستأجر
+            ->get()
+            ->map(function ($review) {
+                return [
+                    'user_name'    => $review->tenant->name ?? 'مستخدم مجهول',
+                    'user_image'   => $review->tenant->profile->profile_image ?? null, // غيّر profile_image لاسم العمود الصحيح عندك في users (مثل avatar أو photo)
+                    'comment'      => $review->comment ?? '',
+                    'rating_value' => (float) $review->rating,
+                    'created_at'   => $review->created_at->format('Y-m-d'),
+                ];
+            });
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+
+    public function destroy(int $id)
     {
-        //
+        // حذف تقييم من قبل صاحب التقييم فقط
+        $review = Review::findOrFail($id);
+        $user = FacadesAuth::user();
+        if ($review->tenant_id !== $user->id) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'لا يمكنك حذف تقييم لا يخصك'
+            ], 403);
+        }
+        $review->delete();
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'تم حذف التقييم بنجاح'
+        ]);
     }
 }

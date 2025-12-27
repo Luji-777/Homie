@@ -22,8 +22,8 @@ return new class extends Migration
             $table->float('total_price');
             $table->enum('status',[
                 'pending',
-                'owner _approved',
-                'awner_rejectede',
+                'owner_approved',
+                'owner_rejected',
                 'paid',
                 'canceled',
                 'completed',

@@ -82,7 +82,7 @@ class ApartmentController extends Controller
 
 
         return response()->json([
-            'status' => '',
+            'status' => $apartment->status,
             'data' => [
                 'apartment' => [
                     'id' => $apartment->id,
@@ -117,7 +117,7 @@ class ApartmentController extends Controller
                     'reviews' => $apartment->review->map(function ($review) {
                         return [
                             'user_name'    => $review->tenant->name ?? 'مستخدم مجهول',
-                            'user_image'   => $review->tenant->profile->profile_image ?? null, // غيّر profile_image لاسم العمود الصحيح عندك في users (مثل avatar أو photo)
+                            'user_image'   => $review->tenant->profile->profile_photo ?? null, // غيّر profile_image لاسم العمود الصحيح عندك في users (مثل avatar أو photo)
                             'comment'      => $review->comment ?? '',
                             'rating_value' => (float) $review->rating,
                             'created_at'   => $review->created_at->format('Y-m-d'),
@@ -423,7 +423,7 @@ public function favorites(int $id)
     }
 
     public function setFavoriteApartment(int $id){
-        
+
     }
 
     /////////////////////////////////////////////////////////////////////////////////////

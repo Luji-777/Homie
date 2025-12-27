@@ -22,5 +22,6 @@ Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanc
 
 
 Route::apiResource('apartments', ApartmentController::class)->middleware('auth:sanctum');
+// Route::get('apartments/{id}', [ApartmentController::class, 'show']);
 Route::get('/filter', [ApartmentController::class, 'filter']);
 Route::get('/approvedApartments', [ApartmentController::class, 'approvedApartments']);

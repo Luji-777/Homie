@@ -3,6 +3,8 @@
 use App\Http\Controllers\ApartmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CityController;
+use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,3 +27,13 @@ Route::apiResource('apartments', ApartmentController::class)->middleware('auth:s
 // Route::get('apartments/{id}', [ApartmentController::class, 'show']);
 Route::get('/filter', [ApartmentController::class, 'filter']);
 Route::get('/approvedApartments', [ApartmentController::class, 'approvedApartments']);
+
+
+Route::post('/createReview', [ReviewController::class, 'store']);
+Route::get('/apartmentReview/{id}', [ReviewController::class, 'show']);
+Route::delete('/deleteReview/{id}', [ReviewController::class, 'destroy']);
+
+Route::get('/myFavorites', [FavoriteController::class, 'myFavorites']);
+Route::post('/addFavorite', [FavoriteController::class, 'addFavorite']);
+Route::delete('/removeFavorite', [FavoriteController::class, 'removeFavorite']);
+Route::get('/isFavorite/{id}', [FavoriteController::class, 'isFavorite']);

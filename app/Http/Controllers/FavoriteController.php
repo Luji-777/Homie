@@ -77,11 +77,11 @@ class FavoriteController extends Controller
         ]);
     }
 
-    public function isFavorite(Request $request, $apartmentId)
+    public function isFavorite(int $id)
     {
         $user = FacadesAuth::user();
 
-        $isFavorite = $user->favorites()->where('apartment_id', $apartmentId)->exists();
+        $isFavorite = $user->favorites()->where('apartment_id', $id)->exists();
 
         return response()->json([
             'status' => 'success',

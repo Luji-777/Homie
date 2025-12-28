@@ -48,9 +48,28 @@ Route::get('/areas', [CityController::class, 'areas']);
 Route::post('/apartments/{apartment}/book', [BookingController::class, 'store'])->middleware('auth:sanctum');
 
 
-Route::get('/apartments/{id}/booked-dates', [BookingController::class, 'getBookedDates'])
-    ->middleware('auth:sanctum'); // أو أي middleware مناسب
+Route::get('/apartments/{id}/booked-dates', [BookingController::class, 'getBookedDates']);
 
 Route::post('/bookings/{bookingId}/owner-response', [BookingController::class, 'handleOwnerResponse'])
     ->middleware('auth:sanctum') // أو auth:api حسب نظام الـ authentication عندك
     ->name('bookings.owner-response');
+
+Route::get('/myBookings', [BookingController::class, 'myBookings'])->middleware('auth:sanctum'); // بحاجة تجريب وتعديل الكود من عند لجين
+
+
+
+// طلب إلغاء من المستأجر
+Route::post('/bookings/{bookingId}/request-cancellation', [BookingController::class, 'requestCancellation'])
+    ->name('bookings.request-cancellation');
+
+// موافقة المالك على الإلغاء
+Route::post('/bookings/{bookingId}/approve-cancellation', [BookingController::class, 'approveCancellation'])
+    ->name('bookings.approve-cancellation');
+
+// طلب تعديل من المستأجر
+Route::post('/bookings/{bookingId}/request-modification', [BookingController::class, 'requestModification'])
+    ->name('bookings.request-modification');
+
+// موافقة المالك على التعديل
+Route::post('/bookings/{bookingId}/approve-modification', [BookingController::class, 'approveModification'])
+    ->name('bookings.approve-modification');

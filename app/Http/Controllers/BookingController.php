@@ -6,7 +6,6 @@ use App\Models\Booking;
 use App\Models\Review;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Http\Request;
-use App\Http\Requests\StoreApartmentRequest; // ملاحظة: الاسم هنا غريب شوية، ربما تقصد StoreBookingRequest؟
 use App\Models\Apartment;
 use App\Rules\NoOverlappingBooking;
 use Carbon\Carbon;
@@ -65,11 +64,21 @@ class BookingController extends Controller
         ]);
     }
 
+
+
+
+
+
     public function index()
     {
         // $booking=Booking::forUser(auth()->user())->latest()->get();
         //return response()->json($booking);
     }
+
+
+
+
+
 
     public function store(Request $request, int $id)
     {
@@ -88,6 +97,9 @@ class BookingController extends Controller
         $apartment = Apartment::findOrFail($id);
 
         // حساب عدد الأيام
+        $checkIn = Carbon::createFromFormat('d-m-Y', $request->check_in)->format('Y-m-d'); // شكل التاريخ
+        $checkIn = Carbon::createFromFormat('d-m-Y', $request->check_out)->format('Y-m-d'); // شكل التاريخ
+
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
         $totalDays = $checkIn->diffInDays($checkOut);
@@ -120,6 +132,12 @@ class BookingController extends Controller
             'total_price' => $totalPrice,
         ], 201);
     }
+
+
+
+
+
+
 
 
     /**
@@ -172,22 +190,216 @@ class BookingController extends Controller
             ], 200);
         }
     }
-    public function show(string $id)
+
+
+
+    /**
+     * طلب إلغاء الحجز من المستأجر (بانتظار موافقة المالك)
+     */
+    public function requestCancellation(Request $request, $bookingId)
     {
-        //
+        $booking = Booking::findOrFail($bookingId);
+
+        // التأكد إن المستخدم هو المستأجر
+        if ($booking->tenant_id !== FacadesAuth::user()->id) {
+            return response()->json([
+                'message' => 'غير مصرح لك بهذا الإجراء'
+            ], 403);
+        }
+
+        // التأكد إن الحجز مؤكد (مش pending أو مرفوض)
+        if (!in_array($booking->status, ['owner_approved', 'paid'])) {
+            return response()->json([
+                'message' => 'لا يمكن إلغاء حجز غير مؤكد'
+            ], 400);
+        }
+
+        // التحقق من السبب
+        $request->validate([
+            'reason' => 'required|string|min:10|max:1000'
+        ]);
+
+        // حفظ السبب + تغيير الحالة إلى حالة وسيطة (هنستخدم 'pending' مؤقتًا؟ لا)
+        // بدل ذلك: نحفظ السبب فقط، ونخلي status كما هو، والمالك يشوف السبب ويغير status إلى cancelled
+        $booking->update([
+            'cancellation_reason' => $request->reason,
+            // status يبقى owner_approved، بس المالك هيشوف إن في سبب إلغاء
+        ]);
+
+        // هنا ممكن ترسل notification أو إيميل للمالك (لاحقًا)
+
+        return response()->json([
+            'message' => 'تم إرسال طلب الإلغاء بنجاح، بانتظار موافقة صاحب الشقة',
+            'booking' => $booking->fresh()
+        ], 200);
     }
 
-    public function update(Request $request, string $id)
+
+    /**
+     * موافقة المالك على إلغاء الحجز
+     */
+    public function approveCancellation($bookingId)
     {
-        //
+        $booking = Booking::findOrFail($bookingId);
+
+        // التأكد إن المستخدم هو المالك
+        if ($booking->owner_id !== FacadesAuth::user()->id) {
+            return response()->json([
+                'message' => 'غير مصرح لك'
+            ], 403);
+        }
+
+        // التأكد إن في طلب إلغاء (سبب موجود)
+        if (empty($booking->cancellation_reason)) {
+            return response()->json([
+                'message' => 'لا يوجد طلب إلغاء'
+            ], 400);
+        }
+
+        // إلغاء الحجز فعليًا
+        $booking->update([
+            'status' => 'cancelled',
+            'owner_approval' => false, // اختياري
+        ]);
+
+        return response()->json([
+            'message' => 'تم إلغاء الحجز بنجاح',
+            'booking' => $booking->fresh()
+        ], 200);
     }
 
 
-    public function destroy(string $id)
+
+
+
+    
+    /**
+     * طلب تعديل تواريخ الحجز من المستأجر (بانتظار موافقة المالك)
+     */
+    public function requestModification(Request $request, $bookingId)
     {
-        //
+        $booking = Booking::findOrFail($bookingId);
+
+        // التأكد إن المستخدم هو المستأجر
+        if ($booking->tenant_id !== FacadesAuth::user()->id) {
+            return response()->json([
+                'message' => 'غير مصرح لك بهذا الإجراء'
+            ], 403);
+        }
+
+        // التأكد إن الحجز مؤكد
+        if (!in_array($booking->status, ['owner_approved', 'paid'])) {
+            return response()->json([
+                'message' => 'لا يمكن تعديل حجز غير مؤكد'
+            ], 400);
+        }
+
+        // التحقق من البيانات الجديدة
+        $validated = $request->validate([
+            'new_check_in'  => 'required|date|after_or_equal:today',
+            'new_check_out' => 'required|date|after:new_check_in',
+            'reason'        => 'required|string|min:10|max:1000',
+        ]);
+
+        // تحقق من عدم التداخل مع حجوزات أخرى مؤكدة (نستخدم القاعدة نفسها، مع استثناء الحجز الحالي)
+        $overlapRule = new NoOverlappingBooking($booking->apartment_id, $bookingId);
+        $validator = validator($validated, [
+            'new_check_out' => [$overlapRule]
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'التواريخ الجديدة متداخلة مع حجز آخر مؤكد'
+            ], 422);
+        }
+
+        // حفظ الطلب في cancellation_reason كنص واضح
+        $modificationText = "طلب تعديل الحجز:\n" .
+            "تاريخ الدخول الجديد: {$validated['new_check_in']}\n" .
+            "تاريخ الخروج الجديد: {$validated['new_check_out']}\n" .
+            "السبب: {$validated['reason']}";
+
+        $booking->update([
+            'cancellation_reason' => $modificationText,
+            // status يبقى كما هو، بس المالك هيعرف إنه طلب تعديل
+        ]);
+
+        return response()->json([
+            'message' => 'تم إرسال طلب تعديل الحجز بنجاح، بانتظار موافقة صاحب الشقة',
+            'booking' => $booking->fresh()
+        ], 200);
     }
 
+    /**
+     * موافقة المالك على طلب التعديل وتطبيقه
+     */
+    public function approveModification(Request $request, $bookingId)
+    {
+        $booking = Booking::findOrFail($bookingId);
+
+        // التأكد إن المستخدم هو المالك
+        if ($booking->owner_id !== FacadesAuth::user()->id) {
+            return response()->json([
+                'message' => 'غير مصرح لك'
+            ], 403);
+        }
+
+        // التأكد إن في طلب تعديل (النص يحتوي على "طلب تعديل")
+        if (is_null($booking->cancellation_reason) || !str_contains($booking->cancellation_reason, 'طلب تعديل')) {
+            return response()->json([
+                'message' => 'لا يوجد طلب تعديل'
+            ], 400);
+        }
+
+        // استخراج التواريخ من النص (بطريقة بسيطة)
+        preg_match('/تاريخ الدخول الجديد: (\d{4}-\d{2}-\d{2})/', $booking->cancellation_reason, $inMatches);
+        preg_match('/تاريخ الخروج الجديد: (\d{4}-\d{2}-\d{2})/', $booking->cancellation_reason, $outMatches);
+
+        if (empty($inMatches[1]) || empty($outMatches[1])) {
+            return response()->json([
+                'message' => 'تعذر قراءة التواريخ الجديدة'
+            ], 400);
+        }
+
+        $newCheckIn = $inMatches[1];
+        $newCheckOut = $outMatches[1];
+
+        // حساب السعر الجديد
+        $checkIn = Carbon::parse($newCheckIn);
+        $checkOut = Carbon::parse($newCheckOut);
+        $totalDays = $checkIn->diffInDays($checkOut);
+
+        $apartment = $booking->apartment;
+
+        if ($totalDays >= 30) {
+            $fullMonths = floor($totalDays / 30);
+            $remainingDays = $totalDays % 30;
+            $newPrice = ($fullMonths * $apartment->price_per_month) + ($remainingDays * $apartment->price_per_day);
+        } else {
+            $newPrice = $totalDays * $apartment->price_per_day;
+        }
+
+        // تطبيق التعديل
+        $booking->update([
+            'check_in' => $newCheckIn,
+            'check_out' => $newCheckOut,
+            'total_price' => $newPrice,
+            'cancellation_reason' => null, // مسح الطلب بعد التنفيذ
+        ]);
+
+        return response()->json([
+            'message' => 'تم تعديل الحجز بنجاح',
+            'booking' => $booking->fresh()
+        ], 200);
+    }
+
+
+
+
+
+    
+
+    // هي من عند لجين
     public function myBookings(Request $request)
     {
         $tenant_id = FacadesAuth::user()->id;

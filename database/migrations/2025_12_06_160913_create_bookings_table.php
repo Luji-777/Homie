@@ -22,13 +22,13 @@ return new class extends Migration
             $table->float('total_price')->nullable();
             $table->enum('status',[
                 'pending',
-                'owner _approved',
+                'owner_approved',
                 'owner_rejected',
                 'paid',
                 'cancelled',
                 'completed',
                 ])->default('pending')->nullable();
-            $table->text('cancellation_resion')->nullable();
+            $table->text('cancellation_reason')->nullable();
             $table->boolean('owner_approval')->default(false)->nullable(); // موافقة المالك
 
 

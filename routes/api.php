@@ -20,9 +20,20 @@ Route::post('/login', [UserController::class, 'login']);
 Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
 
 
-Route::apiResource('apartments',ApartmentController::class)->middleware('auth:sanctum');
+Route::apiResource('apartments', ApartmentController::class)->middleware('auth:sanctum');
 
 Route::get('/cities', [CityController::class, 'cities']);
 Route::get('/areas', [CityController::class, 'areas']);
 
 Route::post('/apartments/{apartment}/book', [BookingController::class, 'store'])->middleware('auth:sanctum');
+
+
+Route::get('/apartments/{id}/booked-dates', [BookingController::class, 'getBookedDates'])
+    ->middleware('auth:sanctum'); // أو أي middleware مناسب
+
+Route::post('/bookings/{bookingId}/owner-response', [BookingController::class, 'handleOwnerResponse'])
+    ->middleware('auth:sanctum') // أو auth:api حسب نظام الـ authentication عندك
+    ->name('bookings.owner-response');
+
+
+    

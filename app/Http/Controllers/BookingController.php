@@ -14,18 +14,63 @@ use Illuminate\Support\Carbon;
 class BookingController extends Controller
 {
 
-    public function index()
-    {
-       // $booking=Booking::forUser(auth()->user())->latest()->get();
-        //return response()->json($booking);
+   public function index(Request $request)
+{
+    $user = Auth::user();
+
+    $type = $request->input('type'); // completed, cancelled, current
+
+    $query = Booking::where('tenant_id', $user->id)
+        ->with('apartment');
+
+    // fillter
+    if ($type === 'completed') {
+        $query->where('status', 'completed');
+    } elseif ($type === 'cancelled') {
+        $query->where('status', 'cancelled');
+    } elseif ($type === 'current') {
+        $query->whereIn('status', ['pending', 'owner_approved', 'owner_rejected']);
     }
+    // if !type => return all booking
+
+    $bookings = $query->latest()->paginate(10);
+
+    $formattedBookings = $bookings->map(function ($booking) {
+        $statusText = match ($booking->status) {
+            'pending'          => 'Pending Owner Approval',
+            'owner_approved'   => 'Approved',
+            'owner_rejected'   => 'Rejected',
+            'completed'        => 'Completed',
+            'cancelled'        => 'Cancelled',
+            default            => $booking->status,
+        };
+
+        return [
+            'property_type'   => $booking->apartment->type ?? 'Not specified',
+            'title'  =>          $booking->apartment->title ?? 'Not specified',
+            'rental_period'   => $booking->check_in . ' to ' . $booking->check_out,
+            'main_image'      => $booking->apartment->main_image ?? null, //edit
+            'city'            => $booking->apartment->city ?? 'Not specified',
+            'address'         => $booking->apartment->address ?? 'Not specified',
+            'booking_status'  => $statusText,
+        ];
+    });
+
+    return response()->json([
+        'bookings'      => $formattedBookings,
+        'current_page'  => $bookings->currentPage(),
+        'last_page'     => $bookings->lastPage(),
+        'total'         => $bookings->total(),
+        'per_page'      => $bookings->perPage(),
+    ]);
+}
 
     public function store(Request $request,Apartment $apartment)
     {
         // التحقق من البيانات
     $validated = $request->validate([
-        'check_in'  => 'required|date|after_or_equal:today',
-        'check_out' => [
+            'check_in'  => 'required|date|after_or_equal:today',
+            'check_out' => [
             'required',
             'date',
             'after:check_in',

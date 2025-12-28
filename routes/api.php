@@ -26,3 +26,4 @@ Route::get('/cities', [CityController::class, 'cities']);
 Route::get('/areas', [CityController::class, 'areas']);
 
 Route::post('/apartments/{apartment}/book', [BookingController::class, 'store'])->middleware('auth:sanctum');
+Route::get('/getTenantApartment', [BookingController::class, 'index'])->middleware('auth:sanctum');

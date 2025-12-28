@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Http\Foundation\Auth\Access\AuthorizesRequests;
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ApartmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CityController;
@@ -37,3 +39,18 @@ Route::get('/myFavorites', [FavoriteController::class, 'myFavorites']);
 Route::post('/addFavorite', [FavoriteController::class, 'addFavorite']);
 Route::delete('/removeFavorite', [FavoriteController::class, 'removeFavorite']);
 Route::get('/isFavorite/{id}', [FavoriteController::class, 'isFavorite']);
+
+Route::get('/cities', [CityController::class, 'cities']);
+Route::get('/areas', [CityController::class, 'areas']);
+
+
+
+Route::post('/apartments/{apartment}/book', [BookingController::class, 'store'])->middleware('auth:sanctum');
+
+
+Route::get('/apartments/{id}/booked-dates', [BookingController::class, 'getBookedDates'])
+    ->middleware('auth:sanctum'); // أو أي middleware مناسب
+
+Route::post('/bookings/{bookingId}/owner-response', [BookingController::class, 'handleOwnerResponse'])
+    ->middleware('auth:sanctum') // أو auth:api حسب نظام الـ authentication عندك
+    ->name('bookings.owner-response');

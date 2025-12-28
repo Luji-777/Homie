@@ -19,17 +19,17 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained('users')->onDelete('cascade');
             $table->date('check_in');
             $table->date('check_out');
-            $table->float('total_price');
+            $table->float('total_price')->nullable();
             $table->enum('status',[
                 'pending',
                 'owner_approved',
                 'owner_rejected',
                 'paid',
-                'canceled',
+                'cancelled',
                 'completed',
-                ]);
-            $table->text('cancellation_resion')->nullable();
-            $table->boolean('owner_approval')->default(false); // موافقة المالك
+                ])->default('pending')->nullable();
+            $table->text('cancellation_reason')->nullable();
+            $table->boolean('owner_approval')->default(false)->nullable(); // موافقة المالك
 
 
             $table->timestamps();

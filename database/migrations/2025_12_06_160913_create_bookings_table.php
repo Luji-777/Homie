@@ -22,9 +22,9 @@ return new class extends Migration
             $table->float('total_price')->nullable();
             $table->enum('status',[
                 'pending',
-                'owner _approved',
+                'owner_approved',
                 'owner_rejected',
-                'paid',
+                'current',
                 'cancelled',
                 'completed',
                 ])->default('pending')->nullable();

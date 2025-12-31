@@ -98,7 +98,7 @@ class BookingController extends Controller
 
         // حساب عدد الأيام
         $checkIn = Carbon::createFromFormat('d-m-Y', $request->check_in)->format('Y-m-d'); // شكل التاريخ
-        $checkIn = Carbon::createFromFormat('d-m-Y', $request->check_out)->format('Y-m-d'); // شكل التاريخ
+        $checkOut = Carbon::createFromFormat('d-m-Y', $request->check_out)->format('Y-m-d'); // شكل التاريخ
 
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
@@ -213,7 +213,6 @@ class BookingController extends Controller
                 'message' => 'لا يمكن إلغاء حجز غير مؤكد'
             ], 400);
         }
-
         // التحقق من السبب
         $request->validate([
             'reason' => 'required|string|min:10|max:1000'
@@ -272,7 +271,7 @@ class BookingController extends Controller
 
 
 
-    
+
     /**
      * طلب تعديل تواريخ الحجز من المستأجر (بانتظار موافقة المالك)
      */
@@ -300,6 +299,10 @@ class BookingController extends Controller
             'new_check_out' => 'required|date|after:new_check_in',
             'reason'        => 'required|string|min:10|max:1000',
         ]);
+
+        $checkIn = Carbon::createFromFormat('d-m-Y', $request->new_check_in)->format('Y-m-d'); // شكل التاريخ
+        $checkOut = Carbon::createFromFormat('d-m-Y', $request->new_check_out)->format('Y-m-d'); // شكل التاريخ
+
 
         // تحقق من عدم التداخل مع حجوزات أخرى مؤكدة (نستخدم القاعدة نفسها، مع استثناء الحجز الحالي)
         $overlapRule = new NoOverlappingBooking($booking->apartment_id, $bookingId);
@@ -397,17 +400,56 @@ class BookingController extends Controller
 
 
 
-    
 
-    // هي من عند لجين
+
     public function myBookings(Request $request)
     {
-        $tenant_id = FacadesAuth::user()->id;
-        $bookings = Booking::where('tenant_id', $tenant_id)->get();
-        // إرجاع بيانات الحجوزات مع الحالة
+        $user = FacadesAuth::user();
+
+        $type = $request->input('type'); // completed, cancelled, current
+
+        $query = Booking::where('tenant_id', $user->id)
+            ->with('apartment');
+
+        // fillter
+        if ($type === 'completed') {
+            $query->where('status', 'completed');
+        } elseif ($type === 'cancelled') {
+            $query->where('status', 'cancelled');
+        } elseif ($type === 'current') {
+            $query->whereIn('status', ['pending', 'owner_approved', 'owner_rejected']);
+        }
+        // if !type => return all booking
+
+        $bookings = $query->latest()->paginate(10);
+
+        $formattedBookings = $bookings->map(function ($booking) {
+            $statusText = match ($booking->status) {
+                'pending'          => 'Pending Owner Approval',
+                'owner_approved'   => 'Approved',
+                'owner_rejected'   => 'Rejected',
+                'completed'        => 'Completed',
+                'cancelled'        => 'Cancelled',
+                default            => $booking->status,
+            };
+
+            return [
+                'property_type'   => $booking->apartment->type ?? 'Not specified',
+                'title'  =>          $booking->apartment->title ?? 'Not specified',
+                'rental_period'   => $booking->check_in . ' to ' . $booking->check_out,
+                'main_image'      => $booking->apartment->main_image ?? null, //edit
+                'city'            => $booking->apartment->city ?? 'Not specified',
+                'address'         => $booking->apartment->address ?? 'Not specified',
+                'booking_status'  => $statusText,
+            ];
+        });
 
         return response()->json([
-            'bookings' => $bookings
-        ], 200);
+            'bookings'      => $formattedBookings,
+            'current_page'  => $bookings->currentPage(),
+            'last_page'     => $bookings->lastPage(),
+            'total'         => $bookings->total(),
+            'per_page'      => $bookings->perPage(),
+        ]);
     }
 }

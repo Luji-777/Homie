@@ -60,16 +60,24 @@ Route::get('/myBookings', [BookingController::class, 'myBookings'])->middleware(
 
 // طلب إلغاء من المستأجر
 Route::post('/bookings/{bookingId}/request-cancellation', [BookingController::class, 'requestCancellation'])
+    ->middleware('auth:sanctum')
     ->name('bookings.request-cancellation');
 
 // موافقة المالك على الإلغاء
 Route::post('/bookings/{bookingId}/approve-cancellation', [BookingController::class, 'approveCancellation'])
+    ->middleware('auth:sanctum')
     ->name('bookings.approve-cancellation');
+
+
+
+    
 
 // طلب تعديل من المستأجر
 Route::post('/bookings/{bookingId}/request-modification', [BookingController::class, 'requestModification'])
+    ->middleware('auth:sanctum')
     ->name('bookings.request-modification');
 
 // موافقة المالك على التعديل
 Route::post('/bookings/{bookingId}/approve-modification', [BookingController::class, 'approveModification'])
+    ->middleware('auth:sanctum')
     ->name('bookings.approve-modification');

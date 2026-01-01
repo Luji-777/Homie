@@ -90,21 +90,45 @@ class ReviewController extends Controller
 
 
 
-    public function show(int $id)
+    public static function formatForApartment(int $apartmentId)
     {
-        // عرض كل التقييمات الخاصة بشقة معينة
-        $reviews = Review::where('apartment_id', $id)
-            ->with('tenant') // جلب بيانات المستأجر
-            ->get()
-            ->map(function ($review) {
-                return [
-                    'user_name'    => $review->tenant->name ?? 'مستخدم مجهول',
-                    'user_image'   => $review->tenant->profile->profile_image ?? null, // غيّر profile_image لاسم العمود الصحيح عندك في users (مثل avatar أو photo)
-                    'comment'      => $review->comment ?? '',
-                    'rating_value' => (float) $review->rating,
-                    'created_at'   => $review->created_at->format('Y-m-d'),
-                ];
-            });
+        $reviews = Review::where('apartment_id', $apartmentId)
+            ->with(['tenant', 'tenant.profile'])
+            ->get();
+
+        $averageRating = $reviews->avg('rating') ?? 0;
+        $totalReviews  = $reviews->count();
+
+        $formattedReviews = $reviews->map(function ($review) {
+            return [
+                'id'         => $review->id,
+                'rating'     => (float) $review->rating,
+                'comment'    => $review->comment ?? '',
+                'created_at' => $review->created_at->format('Y-m-d'),
+                'reviewer'   => [
+                    'id'            => $review->tenant->id ?? null,
+                    'full_name'     => $review->tenant->name ?? 'مستخدم مجهول',
+                    'profile_image' => $review->tenant->profile->profile_photo ?? null,
+                ]
+            ];
+        });
+
+        return [
+            'summary' => [
+                'average_rating' => round($averageRating, 1),
+                'total_reviews'  => $totalReviews
+            ],
+            'data' => $formattedReviews
+        ];
+    }
+
+    // الدالة القديمة show الخاصة بالـ API
+    public function show(int $apartmentId)
+    {
+        return response()->json([
+            'status' => 'success',
+            ReviewController::formatForApartment($apartmentId)
+        ]);
     }
 
 
@@ -112,16 +136,27 @@ class ReviewController extends Controller
 
     public function destroy(int $id)
     {
+        // التحقق من تسجيل الدخول
+        $user = FacadesAuth::user();
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'يجب تسجيل الدخول أولاً'
+            ], 401);
+        }
+
         // حذف تقييم من قبل صاحب التقييم فقط
         $review = Review::findOrFail($id);
-        $user = FacadesAuth::user();
+
         if ($review->tenant_id !== $user->id) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'لا يمكنك حذف تقييم لا يخصك'
             ], 403);
         }
+
         $review->delete();
+
         return response()->json([
             'status'  => 'success',
             'message' => 'تم حذف التقييم بنجاح'

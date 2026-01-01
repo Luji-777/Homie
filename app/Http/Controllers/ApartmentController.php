@@ -114,15 +114,7 @@ class ApartmentController extends Controller
                         // 'bio'            => $apartment->owner->bio ?? null,    // إذا عندك عمود bio في users
                         'profile_image'  => $apartment->owner->profile->profile_photo ?? null,
                     ],
-                    'reviews' => $apartment->review->map(function ($review) {
-                        return [
-                            'user_name'    => $review->tenant->name ?? 'مستخدم مجهول',
-                            'user_image'   => $review->tenant->profile->profile_photo ?? null, // غيّر profile_image لاسم العمود الصحيح عندك في users (مثل avatar أو photo)
-                            'comment'      => $review->comment ?? '',
-                            'rating_value' => (float) $review->rating,
-                            'created_at'   => $review->created_at->format('Y-m-d'),
-                        ];
-                    })->toArray(),
+                    'reviews' => ReviewController::formatForApartment($apartment->id),
                 ]
             ]
         ], 200);
@@ -401,7 +393,7 @@ class ApartmentController extends Controller
 
 
 
-public function favorites(int $id)
+    public function favorites(int $id)
     {
         $apartment = Apartment::with(['favorites'])->findOrFail($id);
 
@@ -422,9 +414,7 @@ public function favorites(int $id)
         ], 200);
     }
 
-    public function setFavoriteApartment(int $id){
-
-    }
+    public function setFavoriteApartment(int $id) {}
 
     /////////////////////////////////////////////////////////////////////////////////////
 

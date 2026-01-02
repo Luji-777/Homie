@@ -75,12 +75,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(Review::class, 'tenant_id');
     }
-    
+
     // Define relationship to Favorite model
-    public function favoriteApartment(): BelongsToMany
+    public function favoriteApartments(): BelongsToMany
     {
-        return $this->belongsToMany(Apartment::class, 'tenant_id', 'favorite', 'apartment_id')->withTimestamps();
+        return $this->belongsToMany(
+            Apartment::class,
+            'favorites',        // اسم جدول pivot
+            'tenant_id',        // المفتاح اللي بيربط user
+            'apartment_id'      // المفتاح اللي بيربط apartment
+        )->withTimestamps();
     }
+
+
 
     // Define relationship to Message model
     public function sentMessages(): HasMany

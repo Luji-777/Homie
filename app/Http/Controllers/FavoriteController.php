@@ -10,17 +10,56 @@ use Illuminate\Http\Request;
 class FavoriteController extends Controller
 {
     //
-    public function myFavorites( )
+    public function myFavorites()
     {
         $user = FacadesAuth::user();
 
-        $favorites = $user->favorites()->with('apartment')->get();
+        $favorites = $user->favoriteApartments()
+            ->with([
+                'isCover',
+                'owner.profile',
+                'area.city',
+                'review'
+            ])
+            ->get()
+            ->map(function ($apartment) {
+
+                $averageRating = $apartment->review->avg('rating');
+
+                return [
+                    'data' => [
+                        'id'             => $apartment->id,
+                        'title'          => $apartment->title,
+                        'price'          => $apartment->price_per_month,
+                        'cover_image'    => $apartment->isCover
+                            ? asset('storage/' . $apartment->isCover->image_path)
+                            : null,
+                        'space'          => (float) $apartment->space,
+                        'bedrooms'       => $apartment->bedrooms,
+                        'bathrooms'      => $apartment->bathrooms,
+                        'rooms'          => $apartment->rooms ?? null,
+                        'address'        => $apartment->area->city->name . '، ' . $apartment->area->name,
+                        'rental_type'    => 'monthly',
+                        'apartment_type' => $apartment->type,
+                        'Review'         => round($averageRating, 1),
+                    ],
+                    'owner' => [
+                        'id'            => $apartment->owner->id,
+                        'profile_image' => $apartment->owner->profile->profile_photo ?? null,
+                        'Full Name'     => $apartment->owner->profile->first_name . ' ' . $apartment->owner->profile->last_name,
+                        'phone_number'  => $apartment->owner->phone_number,
+                        'bio'           => null, // مؤقتاً
+                    ]
+                ];
+            });
 
         return response()->json([
             'status' => 'success',
-            'data' => $favorites
+            'data'   => $favorites
         ]);
     }
+
+
 
     public function addFavorite(Request $request)
     {
@@ -30,24 +69,21 @@ class FavoriteController extends Controller
 
         $user = FacadesAuth::user();
 
-        // تحقق إذا الشقة مضافة بالفعل للمفضلة
-        if ($user->favorites()->where('apartment_id', $validated['apartment_id'])->exists()) {
+        if ($user->favoriteApartments()->where('apartments.id', $validated['apartment_id'])->exists()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'الشقة مضافة بالفعل للمفضلة'
             ], 400);
         }
 
-        // أضف الشقة للمفضلة
-        $user->favorites()->create([
-            'apartment_id' => $validated['apartment_id'],
-        ]);
+        $user->favoriteApartments()->attach($validated['apartment_id']);
 
         return response()->json([
             'status' => 'success',
             'message' => 'تمت إضافة الشقة إلى المفضلة بنجاح'
         ]);
     }
+
 
 
     public function removeFavorite(Request $request)
@@ -58,24 +94,24 @@ class FavoriteController extends Controller
 
         $user = FacadesAuth::user();
 
-        // تحقق إذا الشقة موجودة في المفضلة
-        $favorite = $user->favorites()->where('apartment_id', $validated['apartment_id'])->first();
-
-        if (!$favorite) {
+        if (! $user->favoriteApartments()->where('apartments.id', $validated['apartment_id'])->exists()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'الشقة غير موجودة في المفضلة'
             ], 400);
         }
 
-        // احذف الشقة من المفضلة
-        $favorite->delete();
+        $user->favoriteApartments()->detach($validated['apartment_id']);
 
         return response()->json([
             'status' => 'success',
             'message' => 'تمت إزالة الشقة من المفضلة بنجاح'
         ]);
     }
+
+
+
+
 
     public function isFavorite(int $id)
     {

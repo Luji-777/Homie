@@ -37,9 +37,9 @@ Route::delete('/deleteReview/{id}', [ReviewController::class, 'destroy'])->middl
 
 
 ///Favorite//////////////////////////////
-Route::get('/myFavorites', [FavoriteController::class, 'myFavorites']);
-Route::post('/addFavorite', [FavoriteController::class, 'addFavorite']);
-Route::delete('/removeFavorite', [FavoriteController::class, 'removeFavorite']);
+Route::get('/myFavorites', [FavoriteController::class, 'myFavorites'])->middleware('auth:sanctum');
+Route::post('/addFavorite', [FavoriteController::class, 'addFavorite'])->middleware('auth:sanctum');
+Route::delete('/removeFavorite', [FavoriteController::class, 'removeFavorite'])->middleware('auth:sanctum');
 Route::get('/isFavorite/{id}', [FavoriteController::class, 'isFavorite']);
 
 

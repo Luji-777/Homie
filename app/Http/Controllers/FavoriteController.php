@@ -113,16 +113,13 @@ class FavoriteController extends Controller
 
 
 
-    public function isFavorite(int $id)
+    public static function isFavorite(int $id)
     {
         $user = FacadesAuth::user();
 
-        $isFavorite = $user->favorites()->where('apartment_id', $id)->exists();
+        $isFavorite = $user->favoriteApartments()->where('apartment_id', $id)->exists();
 
-        return response()->json([
-            'status' => 'success',
-            'is_favorite' => $isFavorite
-        ]);
+        return $isFavorite;
     }
 
     public function toggleFavorite(Request $request)

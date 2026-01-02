@@ -27,13 +27,14 @@ Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanc
 
 Route::apiResource('apartments', ApartmentController::class)->middleware('auth:sanctum');
 // Route::get('apartments/{id}', [ApartmentController::class, 'show']);
-Route::get('/filter', [ApartmentController::class, 'filter']);
-Route::get('/approvedApartments', [ApartmentController::class, 'approvedApartments']);
+Route::get('/filter', [ApartmentController::class, 'filter'])->middleware('auth:sanctum');
+Route::get('/approvedApartments', [ApartmentController::class, 'approvedApartments'])->middleware('auth:sanctum');
 
 ///review//////////////////////////////
 Route::post('/createReview', [ReviewController::class, 'store'])->middleware('auth:sanctum');
 Route::get('/apartmentReview/{id}', [ReviewController::class, 'show']);
 Route::delete('/deleteReview/{id}', [ReviewController::class, 'destroy'])->middleware('auth:sanctum');
+Route::get('/topRated', [ReviewController::class, 'topRated'])->middleware('auth:sanctum');
 
 
 ///Favorite//////////////////////////////

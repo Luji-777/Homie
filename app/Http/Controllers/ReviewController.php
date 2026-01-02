@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Review;
+use App\Models\Apartment;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Http\Request;
+
 
 class ReviewController extends Controller
 {
@@ -90,37 +92,6 @@ class ReviewController extends Controller
 
 
 
-    public static function formatForApartment(int $apartmentId)
-    {
-        $reviews = Review::where('apartment_id', $apartmentId)
-            ->with(['tenant', 'tenant.profile'])
-            ->get();
-
-        $averageRating = $reviews->avg('rating') ?? 0;
-        $totalReviews  = $reviews->count();
-
-        $formattedReviews = $reviews->map(function ($review) {
-            return [
-                'id'         => $review->id,
-                'rating'     => (float) $review->rating,
-                'comment'    => $review->comment ?? '',
-                'created_at' => $review->created_at->format('Y-m-d'),
-                'reviewer'   => [
-                    'id'            => $review->tenant->id ?? null,
-                    'full_name'     => $review->tenant->name ?? 'مستخدم مجهول',
-                    'profile_image' => $review->tenant->profile->profile_photo ?? null,
-                ]
-            ];
-        });
-
-        return [
-            'summary' => [
-                'average_rating' => round($averageRating, 1),
-                'total_reviews'  => $totalReviews
-            ],
-            'data' => $formattedReviews
-        ];
-    }
 
     // الدالة القديمة show الخاصة بالـ API
     public function show(int $apartmentId)
@@ -161,5 +132,120 @@ class ReviewController extends Controller
             'status'  => 'success',
             'message' => 'تم حذف التقييم بنجاح'
         ]);
+    }
+
+
+
+    public function topRated(Request $request)
+    {
+        $limit = $request->get('limit', 10);
+
+        $apartments = Apartment::with([
+            'owner.profile',
+            'area.city',
+            'isCover'
+        ])
+            ->withAvg('review', 'rating')
+            ->withCount('review')
+            ->orderByDesc('review_avg_rating')
+            ->take($limit)
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $apartments->map(function ($apartment) {
+                return ApartmentController::format($apartment);
+            })
+        ]);
+    }
+
+
+
+    // public function topRatedApartments(Request $request)
+    // {
+    //     $perPage = $request->get('per_page', 10); // عدد العناصر بالصفحة
+
+    //     $apartments = Apartment::with([
+    //         'owner.profile',
+    //         'area.city',
+    //         'isCover'
+    //     ])
+    //         ->withAvg('review', 'rating')
+    //         ->withCount('review')
+    //         ->orderByDesc('review_avg_rating')
+    //         ->paginate($perPage);
+
+    //     $data = $apartments->getCollection()->map(function ($apartment) {
+    //         return [
+    //             'id' => $apartment->id,
+    //             'title' => $apartment->title,
+    //             'price' => $apartment->price_per_month,
+    //             'cover_image' => $apartment->isCover
+    //                 ? asset('storage/' . $apartment->isCover->image_path)
+    //                 : null,
+    //             'space' => (float) $apartment->space,
+    //             'bedrooms' => $apartment->bedrooms,
+    //             'bathrooms' => $apartment->bathrooms,
+    //             'address' => $apartment->area->city->name . '، ' . $apartment->area->name,
+    //             'rental_type' => 'monthly',
+    //             'apartment_type' => $apartment->type,
+    //             'review' => [
+    //                 'average_rating' => round($apartment->review_avg_rating ?? 0, 1),
+    //                 'total_reviews'  => $apartment->review_count
+    //             ],
+    //             'owner' => [
+    //                 'id' => $apartment->owner->id,
+    //                 'full_name' => $apartment->owner->profile->first_name . ' ' . $apartment->owner->profile->last_name,
+    //                 'profile_image' => $apartment->owner->profile->profile_photo ?? null,
+    //                 'phone_number' => $apartment->owner->phone_number ?? null,
+    //             ],
+    //         ];
+    //     });
+
+    //     return response()->json([
+    //         'status' => 'success',
+    //         'pagination' => [
+    //             'current_page' => $apartments->currentPage(),
+    //             'last_page'    => $apartments->lastPage(),
+    //             'per_page'     => $apartments->perPage(),
+    //             'total'        => $apartments->total(),
+    //         ],
+    //         'data' => $data
+    //     ]);
+    // }
+
+
+
+
+    public static function formatForApartment(int $apartmentId)
+    {
+        $reviews = Review::where('apartment_id', $apartmentId)
+            ->with(['tenant', 'tenant.profile'])
+            ->get();
+
+        $averageRating = $reviews->avg('rating') ?? 0;
+        $totalReviews  = $reviews->count();
+
+        $formattedReviews = $reviews->map(function ($review) {
+            return [
+                'id'         => $review->id,
+                'rating'     => (float) $review->rating,
+                'comment'    => $review->comment ?? '',
+                'created_at' => $review->created_at->format('Y-m-d'),
+                'reviewer'   => [
+                    'id'            => $review->tenant->id ?? null,
+                    'full_name'     => $review->tenant->name ?? 'مستخدم مجهول',
+                    'profile_image' => $review->tenant->profile->profile_photo ?? null,
+                ]
+            ];
+        });
+
+        return [
+            'summary' => [
+                'average_rating' => round($averageRating, 1),
+                'total_reviews'  => $totalReviews
+            ],
+            'data' => $formattedReviews
+        ];
     }
 }

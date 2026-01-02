@@ -21,41 +21,42 @@ class FavoriteController extends Controller
                 'area.city',
                 'review'
             ])
-            ->get()
-            ->map(function ($apartment) {
+            ->get();
+            // ->map(function ($apartment) {
 
-                $averageRating = $apartment->review->avg('rating');
+            //     $averageRating = $apartment->review->avg('rating');
 
-                return [
-                    'data' => [
-                        'id'             => $apartment->id,
-                        'title'          => $apartment->title,
-                        'price'          => $apartment->price_per_month,
-                        'cover_image'    => $apartment->isCover
-                            ? asset('storage/' . $apartment->isCover->image_path)
-                            : null,
-                        'space'          => (float) $apartment->space,
-                        'bedrooms'       => $apartment->bedrooms,
-                        'bathrooms'      => $apartment->bathrooms,
-                        'rooms'          => $apartment->rooms ?? null,
-                        'address'        => $apartment->area->city->name . '، ' . $apartment->area->name,
-                        'rental_type'    => 'monthly',
-                        'apartment_type' => $apartment->type,
-                        'Review'         => round($averageRating, 1),
-                    ],
-                    'owner' => [
-                        'id'            => $apartment->owner->id,
-                        'profile_image' => $apartment->owner->profile->profile_photo ?? null,
-                        'Full Name'     => $apartment->owner->profile->first_name . ' ' . $apartment->owner->profile->last_name,
-                        'phone_number'  => $apartment->owner->phone_number,
-                        'bio'           => null, // مؤقتاً
-                    ]
-                ];
-            });
+            //     return [
+            //         'data' => [
+            //             'id'             => $apartment->id,
+            //             'title'          => $apartment->title,
+            //             'price'          => $apartment->price_per_month,
+            //             'cover_image'    => $apartment->isCover
+            //                 ? asset('storage/' . $apartment->isCover->image_path)
+            //                 : null,
+            //             'space'          => (float) $apartment->space,
+            //             'bedrooms'       => $apartment->bedrooms,
+            //             'bathrooms'      => $apartment->bathrooms,
+            //             'rooms'          => $apartment->rooms ?? null,
+            //             'address'        => $apartment->area->city->name . '، ' . $apartment->area->name,
+            //             'rental_type'    => 'monthly',
+            //             'apartment_type' => $apartment->type,
+            //             'Review'         => round($averageRating, 1),
+            //         ],
+            //         'owner' => [
+            //             'id'            => $apartment->owner->id,
+            //             'profile_image' => $apartment->owner->profile->profile_photo ?? null,
+            //             'Full Name'     => $apartment->owner->profile->first_name . ' ' . $apartment->owner->profile->last_name,
+            //             'phone_number'  => $apartment->owner->phone_number,
+            //             'bio'           => null, // مؤقتاً
+            //         ]
+            //     ];
+            // });
 
         return response()->json([
             'status' => 'success',
-            'data'   => $favorites
+            'data' => $favorites->map(fn ($apt) => ApartmentController::format($apt))
+            // 'data'   => $favorites
         ]);
     }
 

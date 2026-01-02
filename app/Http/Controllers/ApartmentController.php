@@ -181,7 +181,7 @@ class ApartmentController extends Controller
     {
 
         $query = Apartment::query()
-            ->where('is_approved', false) // فقط الشقق المعتمدة يعني لازم نحطها ترووو بس مشان التجريب حاليا
+            ->where('is_approved', true) // فقط الشقق المعتمدة يعني لازم نحطها ترووو بس مشان التجريب حاليا
             ->with(['area.city']); // لإرجاع اسم المنطقة والمحافظة مع الشقة
 
 
@@ -248,9 +248,7 @@ class ApartmentController extends Controller
         $apartments = $query->latest()->paginate(12); // 12 شقة في الصفحة، غيّر الرقم كيف ما بدك
         return response()->json([
             'message' => 'Apartments retrieved successfully.',
-            'data' => $apartments->map(fn ($apt) =>
-                ApartmentController::format($apt)
-            ),
+            'data' => $apartments->map(fn ($apt) => ApartmentController::format($apt)),
             'filters' => $request->only(['type', 'rent_type', 'city_id', 'area_id', 'price_min', 'price_max', 'rooms', 'wifi'])
         ], 200);
     }

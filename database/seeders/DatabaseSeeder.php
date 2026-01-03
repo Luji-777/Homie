@@ -16,10 +16,10 @@ class DatabaseSeeder extends Seeder
 {
     $this->call([
         CitySeeder::class,
-        // UserSeeder::class,
-        // ApartmentSeeder::class,
-        // BookingSeeder::class,
-        // ReviewSeeder::class,
+        UserSeeder::class,
+         ApartmentSeeder::class,
+         BookingSeeder::class,
+     ReviewSeeder::class,
     ]);
 }
 

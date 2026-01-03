@@ -75,7 +75,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(Review::class, 'tenant_id');
     }
-    
+
     // Define relationship to Favorite model
     public function favoriteApartment(): BelongsToMany
     {
@@ -92,5 +92,14 @@ class User extends Authenticatable
     public function receivedMessages(): HasMany
     {
         return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+       public function notification(): HasMany
+    {
+        return $this->hasMany(Notification::class, 'user_id');
+    }
+    public function routeNotificationForFcm()
+    {
+        return $this->fcm_token;
     }
 }

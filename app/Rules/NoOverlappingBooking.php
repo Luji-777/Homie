@@ -51,6 +51,7 @@ class NoOverlappingBooking implements ValidationRule
 
         if ($overlaps) {
             $fail('The apartment have already been booked',null);
+
         }
     }
 }

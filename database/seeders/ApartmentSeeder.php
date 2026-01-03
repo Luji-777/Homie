@@ -43,7 +43,7 @@ class ApartmentSeeder extends Seeder
                 'area_id' => $area->id,
                 'is_approved' => false,
             ]);
-            
+
 
             // إنشاء صور للشقة
             $imagesCount = rand(3, 6);

@@ -137,9 +137,6 @@ class BookingController extends Controller
 
 
 
-
-
-
     /**
      * دالة لمعالجة رد صاحب الشقة (موافقة أو رفض) على طلب الحجز
      */
@@ -270,9 +267,6 @@ class BookingController extends Controller
 
 
 
-
-
-    
     /**
      * طلب تعديل تواريخ الحجز من المستأجر (بانتظار موافقة المالك)
      */
@@ -397,7 +391,7 @@ class BookingController extends Controller
 
 
 
-    
+
 
     // هي من عند لجين
     public function myBookings(Request $request)

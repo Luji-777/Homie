@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Foundation\Auth\Access\AuthorizesRequests;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ApartmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CityController;
@@ -73,3 +74,9 @@ Route::post('/bookings/{bookingId}/request-modification', [BookingController::cl
 // موافقة المالك على التعديل
 Route::post('/bookings/{bookingId}/approve-modification', [BookingController::class, 'approveModification'])
     ->name('bookings.approve-modification');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+});

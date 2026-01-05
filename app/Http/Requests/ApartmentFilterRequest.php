@@ -24,7 +24,7 @@ class ApartmentFilterRequest extends FormRequest
     {
         return [
             'type' => [
-                'required',
+                'sometimes',
                 Rule::in([
                     'room',
                     'studio',

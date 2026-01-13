@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('body');
             $table->string('type');
-            $table->unsignedBigInteger('releted_id')->nullable();
+            $table->unsignedBigInteger('related_id')->nullable();
             $table->boolean('is_read')->default(false)->nullable();
             $table->timestamp('read_at')->nullable();
 

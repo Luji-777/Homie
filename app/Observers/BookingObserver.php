@@ -35,7 +35,7 @@ class BookingObserver
         app(NotificationService::class)->send(
             user: $tenant,
             title: 'Booking Status Update',
-            body: "Apartment: {$booking->apartment->name}\nNew status: {$status}",
+            body: "Apartment: {$booking->apartment->title}\nNew status: {$status}",
             type: 'booking_status',
             relatedId: $booking->id
         );

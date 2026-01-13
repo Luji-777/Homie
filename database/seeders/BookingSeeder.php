@@ -55,7 +55,7 @@ class BookingSeeder extends Seeder
                     'total_price' => $days * $pricePerDay,
                     'status' => $status,
                     'owner_approval' => in_array($status, ['owner_approved', 'paid', 'completed']),
-                    'cancellation_resion' => $status === 'owner_rejected'
+                    'cancellation_reason' => $status === 'owner_rejected'
                         ? fake()->sentence()
                         : null,
                 ]);

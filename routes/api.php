@@ -9,6 +9,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -73,3 +74,10 @@ Route::post('/bookings/{bookingId}/request-modification', [BookingController::cl
 // موافقة المالك على التعديل
 Route::post('/bookings/{bookingId}/approve-modification', [BookingController::class, 'approveModification'])
     ->name('bookings.approve-modification');
+
+    // عرض البروفايل
+    Route::get('/profile', [ProfileController::class, 'show']) ->middleware('auth:sanctum') ;
+
+    // تعديل البروفايل
+    Route::put('/profile', [ProfileController::class, 'update']) ->middleware('auth:sanctum') ;
+

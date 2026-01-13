@@ -64,7 +64,7 @@ Route::post('/bookings/{bookingId}/request-cancellation', [BookingController::cl
     ->name('bookings.request-cancellation');
 
 // موافقة المالك على الإلغاء
-Route::post('/bookings/{bookingId}/approve-cancellation', [BookingController::class, 'approveCancellation'])
+Route::post('/bookings/{bookingId}/cancellation-response', [BookingController::class, 'handleCancellationResponse'])
     ->middleware('auth:sanctum')
     ->name('bookings.approve-cancellation');
 

@@ -280,7 +280,7 @@ class ApartmentController extends Controller
         if ($request->filled('price_max')) {
             $query->where('price', '<=', $request->price_max);
         }
-        
+
         // if ($request->filled('rent_type')) {
         //     if ($request->rent_type === 'day') {
         //         if ($request->filled('price_min')) {
@@ -354,18 +354,59 @@ class ApartmentController extends Controller
     }
 
 
+    // public function approvedApartments()
+    // {
+    //     $apartments = Apartment::where('is_approved', true)
+    //         ->with(['area.city', 'isCover'])
+    //         ->get();
+
+    //     return response()->json([
+    //         'message' => 'Approved apartments retrieved successfully.',
+    //         'data' => $apartments->map(fn($apt) => ApartmentController::format($apt))
+    //     ], 200);
+    // }
+
     public function approvedApartments()
     {
         $apartments = Apartment::where('is_approved', true)
-            ->with(['area.city', 'isCover'])
+            ->with(['area.city', 'isCover', 'owner'])  // ← لازم owner
             ->get();
+
+        $formatted = $apartments->map(function ($apartment) {
+            $averageRating = $apartment->review->avg('rating');
+
+            return [
+                'apartment' => [
+                    'id'             => $apartment->id,
+                    'title'          => $apartment->title,
+                    'price'          => $apartment->price_per_month,
+                    'cover_image'    => $apartment->isCover
+                        ? asset('storage/' . $apartment->isCover->image_path)
+                        : null,
+                    'space'          => (float) $apartment->space,
+                    'bedrooms'       => $apartment->bedrooms,
+                    'bathrooms'      => $apartment->bathrooms,
+                    'rooms'          => $apartment->rooms ?? null,
+                    'address'        => $apartment->area->city->name . '، ' . $apartment->area->name,
+                    'rental_type'    => $apartment->rent_type,
+                    'apartment_type' => $apartment->type,
+                    'average_rating'         => round($averageRating, 1),
+                ],
+                'owner' => [
+                    'id'            => $apartment->owner->id,
+                    'profile_image' => $apartment->owner->profile->profile_photo ?? null,
+                    'full_name'     => $apartment->owner->profile->first_name . ' ' . $apartment->owner->profile->last_name,
+                    'phone_number'  => $apartment->owner->phone_number,
+                    'bio'           => null, // مؤقتاً
+                ]
+            ];
+        });
 
         return response()->json([
             'message' => 'Approved apartments retrieved successfully.',
-            'data' => $apartments->map(fn($apt) => ApartmentController::format($apt))
+            'data'    => $formatted
         ], 200);
     }
-
 
 
     // دالة مساعدة لتعيين صورة الغلاف
@@ -433,7 +474,7 @@ class ApartmentController extends Controller
             'id' => $apartment->id,
             'type' => ucfirst($apartment->type),
             'title' => $apartment->title,
-            'description' => $apartment->discription,
+            'discription' => $apartment->discription,
             'rent_price' => $apartment->price,
             'rent_type' => $apartment->rent_type,
 

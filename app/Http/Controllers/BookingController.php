@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Http\Request;
 use App\Models\Apartment;
 use App\Rules\NoOverlappingBooking;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 
@@ -61,7 +62,6 @@ class BookingController extends Controller
     }
 
 
-    // 
     public function store(Request $request, int $id)
     {
         $validated = $request->validate([
@@ -102,6 +102,22 @@ class BookingController extends Controller
         //     $totalPrice = $totalDays * $apartment->price_per_day;
         // }
 
+
+        $tenant = FacadesAuth::user();
+        // التحقق من الرصيد قبل إنشاء الحجز
+        if ($tenant->balance < $totalPrice) {
+            return response()->json([
+                'message' => 'رصيدك غير كافٍ لإتمام هذا الحجز',
+                'required' => $totalPrice,
+                'current_balance' => $tenant->balance,
+            ], 400);
+        }
+
+        // خصم المبلغ من رصيد المستأجر فورًا
+        $tenant->balance -= $totalPrice;
+        $tenant->save();
+
+
         // إنشاء الحجز بحالة pending و owner_approval = false
         $booking = Booking::create([
             'apartment_id'   => $apartment->id,
@@ -111,7 +127,8 @@ class BookingController extends Controller
             'check_out'      => $validated['check_out'],
             'total_price'    => $totalPrice,
             'status'         => 'pending',
-            'owner_approval' => false,
+            'request_status' => 'pending_owner',
+            // 'owner_approval' => false,
             'cancellation_reason' => null,
         ]);
 
@@ -119,14 +136,18 @@ class BookingController extends Controller
             'message' => 'تم تقديم طلب الحجز بنجاح، بانتظار موافقة صاحب الشقة',
             'booking' => $booking,
             'total_price' => $totalPrice,
+            'new_balance' => $tenant->balance,
         ], 201);
     }
+
 
 
 
     public function handleOwnerResponse(Request $request, $bookingId)
     {
         $booking = Booking::findOrFail($bookingId);
+        $tenant = $booking->tenant;
+        $owner = $booking->owner;
 
         // التأكد إن اللي بيعمل الطلب هو صاحب الشقة فعلاً
         if ($booking->owner_id !== FacadesAuth::user()->id) {
@@ -147,26 +168,37 @@ class BookingController extends Controller
             'action' => 'required|in:approve,reject'
         ]);
 
+
+
         if ($request->action === 'approve') {
+            // الموافقة → تحويل المبلغ للمالك
+            $owner->balance += $booking->total_price;
+            $owner->save();
             $booking->update([
                 'status' => 'owner_approved',
-                'owner_approval' => true,
+                'request_status' => 'owner_accepted',
+
+                // 'owner_approval' => true,
             ]);
 
             return response()->json([
-                'message' => 'تمت الموافقة على الحجز بنجاح',
+                'message' => 'تمت الموافقة على الحجز وتحويل المبلغ لحسابك بنجاح',
                 'booking' => $booking->fresh()
             ], 200);
         }
 
         if ($request->action === 'reject') {
+            $tenant->balance += $booking->total_price;
+            $tenant->save();
             $booking->update([
                 'status' => 'owner_rejected',
-                'owner_approval' => false,
+                'request_status' => 'owner_rejected',
+
+                // 'owner_approval' => false,
             ]);
 
             return response()->json([
-                'message' => 'تم رفض الحجز',
+                'message' => 'تم رفض الحجز وإرجاع المبلغ للمستأجر',
                 'booking' => $booking->fresh()
             ], 200);
         }
@@ -242,7 +274,7 @@ class BookingController extends Controller
             ], 403);
         }
 
-        if (!in_array($booking->status, ['owner_approved', 'paid'])) {
+        if (!in_array($booking->status, ['owner_approved'])) {
             return response()->json([
                 'message' => 'لا يمكن إلغاء حجز غير مؤكد'
             ], 400);
@@ -254,6 +286,8 @@ class BookingController extends Controller
 
         $booking->update([
             'cancellation_reason' => $request->reason,
+            'request_status' => 'tenant_cancel_request',
+
         ]);
 
         // هنا ممكن ترسل notification للمالك
@@ -265,7 +299,7 @@ class BookingController extends Controller
     }
 
 
-    public function approveCancellation($bookingId)
+    public function handleCancellationResponse(Request $request, $bookingId)
     {
         $booking = Booking::findOrFail($bookingId);
 
@@ -282,9 +316,34 @@ class BookingController extends Controller
             ], 400);
         }
 
+        $request->validate([
+            'action' => 'required|in:accept,reject'
+        ]);
+
+        if ($request->action === 'reject') {
+            $booking->update([
+                'cancellation_reason' => null,
+                'request_status' => 'owner_cancel_rejected',
+
+            ]);
+
+            return response()->json([
+                'message' => 'تم رفض طلب الإلغاء',
+                'booking' => $booking->fresh()
+            ], 200);
+        }
+        //  قبول الإلغاء → إرجاع نصف المبلغ للمستأجر وحذفه من حساب المالك
+        $tenant = $booking->tenant;
+        $tenant->balance += $booking->total_price / 2;
+        $tenant->save();
+        $owner = $booking->owner;
+        $owner->balance -= $booking->total_price / 2;
+        $owner->save();
         $booking->update([
             'status' => 'cancelled',
-            'owner_approval' => false, // اختياري
+            'request_status' => 'owner_cancel_accepted',
+
+            // 'owner_approval' => false, // اختياري
         ]);
 
         return response()->json([
@@ -305,7 +364,7 @@ class BookingController extends Controller
             return response()->json(['message' => 'غير مصرح لك بهذا الإجراء'], 403);
         }
 
-        if (!in_array($booking->status, ['owner_approved', 'paid'])) {
+        if (!in_array($booking->status, ['owner_approved'])) {
             return response()->json(['message' => 'لا يمكن تعديل حجز غير مؤكد'], 400);
         }
 
@@ -353,13 +412,19 @@ class BookingController extends Controller
             "تاريخ الخروج الجديد: {$displayCheckOut}\n" .
             "السبب: {$validated['reason']}";
 
-        $booking->update(['cancellation_reason' => $modificationText]);
+        $booking->update([
+            'cancellation_reason' => $modificationText,
+            'request_status' => 'tenant_modify_request',
+
+        ]);
 
         return response()->json([
             'message' => 'تم إرسال طلب تعديل الحجز بنجاح، بانتظار موافقة صاحب الشقة',
             'booking' => $booking->fresh()
         ], 200);
     }
+
+
 
 
 
@@ -382,7 +447,11 @@ class BookingController extends Controller
         ]);
 
         if ($request->action === 'reject') {
-            $booking->update(['cancellation_reason' => null]);
+            $booking->update([
+                'cancellation_reason' => null,
+                'request_status' => 'owner_modify_rejected',
+
+            ]);
 
             return response()->json([
                 'message' => 'تم رفض طلب التعديل',
@@ -422,10 +491,55 @@ class BookingController extends Controller
 
         // حساب السعر الجديد
         $totalDays = Carbon::parse($newCheckIn)->diffInDays(Carbon::parse($newCheckOut));
-
+        $totalDays += 1;
+        // حساب السعر الجديد
         $newPrice = $totalDays >= 30
-            ? (floor($totalDays / 30) * $apartment->price_per_month) + (($totalDays % 30) * $apartment->price_per_day)
-            : $totalDays * $apartment->price_per_day;
+            ? (floor($totalDays / 30) * $apartment->price) + (($totalDays % 30) * ($apartment->price / 30))
+            : $totalDays * $apartment->price;
+        // $newPrice = $totalDays >= 30
+        //     ? (floor($totalDays / 30) * $apartment->price_per_month) + (($totalDays % 30) * $apartment->price_per_day)
+        //     : $totalDays * $apartment->price_per_day;
+
+        $tenant = $booking->tenant;
+        $owner = $booking->owner;
+
+        // تحقق من رصيد المستأجر إذا زاد السعر
+        if ($newPrice > $booking->total_price) {
+            $difference = $newPrice - $booking->total_price;
+            if ($tenant->balance < $difference) {
+                return response()->json([
+                    'message' => 'رصيد المستأجر غير كافٍ لتغطية زيادة السعر المطلوبة',
+                    'required_additional' => $difference,
+                    'current_balance' => $tenant->balance,
+                ], 400);
+            }
+        }
+        // تحقق من رصيد المالك إذا نقص السعر
+        if ($newPrice < $booking->total_price) {
+            $difference = $booking->total_price - $newPrice;
+            if ($owner->balance < $difference) {
+                return response()->json([
+                    'message' => 'رصيد المالك غير كافٍ لتغطية تخفيض السعر المطلوب',
+                    'required_deduction' => $difference,
+                    'current_balance' => $owner->balance,
+                ], 400);
+            }
+        }
+
+        // تعديل رصيد المستأجر و المالك بناءً على الفرق
+        if ($newPrice > $booking->total_price) {
+            $difference = $newPrice - $booking->total_price;
+            $owner->balance += $difference;
+            $owner->save();
+            $tenant->balance -= $difference;
+            $tenant->save();
+        } elseif ($newPrice < $booking->total_price) {
+            $difference = $booking->total_price - $newPrice;
+            $owner->balance -= $difference;
+            $owner->save();
+            $tenant->balance += $difference;
+            $tenant->save();
+        }
 
         // تطبيق التعديل
         $booking->update([
@@ -433,6 +547,8 @@ class BookingController extends Controller
             'check_out' => $newCheckOut,
             'total_price' => $newPrice,
             'cancellation_reason' => null,
+            'request_status' => 'owner_modify_accepted',
+
         ]);
 
         return response()->json([

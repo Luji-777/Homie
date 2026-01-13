@@ -39,7 +39,7 @@ class FavoriteController extends Controller
                         'bathrooms'      => $apartment->bathrooms,
                         'rooms'          => $apartment->rooms ?? null,
                         'address'        => $apartment->area->city->name . '، ' . $apartment->area->name,
-                        'rental_type'    => 'monthly',
+                        'rental_type'    => $apartment->rent_type,
                         'apartment_type' => $apartment->type,
                         'average_rating'         => round($averageRating, 1),
                     ],

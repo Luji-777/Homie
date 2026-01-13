@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('password');
 
             $table->string('phone_number')->unique();
+            $table->decimal('balance', 12, 2)->default(1000000.00); // رصيد المستخدم
             $table->boolean('is_verified')->default(false); // حالة موافقة المدير
             $table->string('otp_code')->nullable(); // رمز التحقق
             $table->timestamp('otp_expires_at')->nullable(); // وقت انتهاء رمز التحقق

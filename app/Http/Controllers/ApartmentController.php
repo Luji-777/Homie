@@ -18,11 +18,16 @@ use Illuminate\Support\Facades\Storage;
 class ApartmentController extends Controller
 {
 
-    // Display a listing of the resource.
+    // شقق المستخدم
     public function index()
     {
         $apartments = FacadesAuth::user()->apartments()->with(['area.city'])->get();
-        return response()->json($apartments, 201);
+        return response()->json([
+            'status' => 'success',
+            'data' => $apartments->map(
+                fn($apt) => ApartmentController::format($apt)
+            )
+        ]);
     }
 
 
@@ -80,52 +85,10 @@ class ApartmentController extends Controller
         // تفاصيل البروفايل
         $apartment->owner->profile = $apartment->owner->profile()->select('first_name', 'last_name', 'profile_photo')->first();
 
-
         return response()->json([
-            'status' => $apartment->status,
-            'data' => [
-                'apartment' => [
-                    'id' => $apartment->id,
-                    'type' => ucfirst($apartment->type),
-                    'title' => $apartment->title,
-                    'description' => $apartment->discription,
-                    'rent_price' => $apartment->price_per_month,
-                    'rent_type' => 'monthly',
-                    'images' => $apartment->apartment_image->map(function ($image) {
-                        return asset('storage/' . $image->image_path);
-                    })->toArray(),
-                    'address' => [
-                        'city_name' => $apartment->area->city->name,
-                        'area_name' => $apartment->area->name,
-                        'detailed_address' => $apartment->address,
-                    ],
-                    'amenities' => [
-                        'bedrooms'   => $apartment->bedrooms,
-                        'bathrooms'  => $apartment->bathrooms,
-                        'space'      => (float) $apartment->space,
-                        'floor'      => $apartment->floor,
-                        'has_wifi'   => (bool) $apartment->wifi,
-                        'has_solar'  => (bool) $apartment->solar,
-                    ],
-                    'owner' => [
-                        'id'             => $apartment->owner->id,
-                        'full_name'      => $apartment->owner->profile->first_name . ' ' . $apartment->owner->profile->last_name,
-                        'phone_number'   => $apartment->owner->phone_number ?? null,
-                        // 'bio'            => $apartment->owner->bio ?? null,    // إذا عندك عمود bio في users
-                        'profile_image'  => $apartment->owner->profile->profile_photo ?? null,
-                    ],
-                    'reviews' => $apartment->review->map(function ($review) {
-                        return [
-                            'user_name'    => $review->tenant->name ?? 'مستخدم مجهول',
-                            'user_image'   => $review->tenant->profile->profile_photo ?? null, // غيّر profile_image لاسم العمود الصحيح عندك في users (مثل avatar أو photo)
-                            'comment'      => $review->comment ?? '',
-                            'rating_value' => (float) $review->rating,
-                            'created_at'   => $review->created_at->format('Y-m-d'),
-                        ];
-                    })->toArray(),
-                ]
-            ]
-        ], 200);
+            'status' => 'success',
+            'data' => ApartmentController::format($apartment)
+        ]);
     }
 
 
@@ -215,82 +178,237 @@ class ApartmentController extends Controller
 
 
 
+    // public function filter(ApartmentFilterRequest $request)
+    // {
+
+    //     $query = Apartment::query()
+    //         ->where('is_approved', true) // فقط الشقق المعتمدة يعني لازم نحطها ترووو بس مشان التجريب حاليا
+    //         ->with(['area.city']); // لإرجاع اسم المنطقة والمحافظة مع الشقة
+
+
+    //         // إدخال أكثر من نوع
+    //     if ($request->filled('type')) {
+    //         $query->where('type', $request->type);
+    //     }
+
+    //     // فلتر حسب نوع الإيجار (rent_type)
+    //     if ($request->filled('rent_type')) {
+    //         if ($request->rent_type === 'day') {
+    //             // فلتر حسب السعر اليومي
+    //             if ($request->filled('price_min')) {
+    //                 $query->where('price_per_day', '>=', $request->price_min);
+    //             }
+    //             if ($request->filled('price_max')) {
+    //                 $query->where('price_per_day', '<=', $request->price_max);
+    //             }
+    //         } elseif ($request->rent_type === 'month') {
+    //             // فلتر حسب السعر الشهري
+    //             if ($request->filled('price_min')) {
+    //                 $query->where('price_per_month', '>=', $request->price_min);
+    //             }
+    //             if ($request->filled('price_max')) {
+    //                 $query->where('price_per_month', '<=', $request->price_max);
+    //             }
+    //         }
+    //     }
+
+
+    //     // فلتر حسب المحافظة (city_id)
+    //     if ($request->filled('city_id')) {
+    //         $query->whereHas('area', function ($q) use ($request) {
+    //             $q->where('city_id', $request->city_id);
+    //         });
+    //     }
+
+    //     // فلتر حسب المنطقة (area_id)
+    //     if ($request->filled('area_id')) {
+    //         $query->where('area_id', $request->area_id);
+    //     }
+
+
+
+    //     // فلتر حسب عدد الغرف
+    //     if ($request->filled('rooms')) {
+    //         $query->where('rooms', $request->rooms);
+    //     }
+
+    //     // فلتر حسب وجود WiFi
+    //     if ($request->filled('wifi')) {
+    //         $Wifi = filter_var($request->wifi, FILTER_VALIDATE_BOOLEAN);
+    //         $query->where('wifi', $Wifi);
+    //     }
+
+    //     // فلتر حسب وجود سولار
+    //     if ($request->filled('solar')) {
+    //         $Solar = filter_var($request->solar, FILTER_VALIDATE_BOOLEAN);
+    //         $query->where('solar', $Solar);
+    //     }
+
+
+
+    //     // ترتيب حسب الأحدث أولاً (اختياري)
+    //     $apartments = $query->latest()->paginate(12); // 12 شقة في الصفحة، غيّر الرقم كيف ما بدك
+    //     return response()->json([
+    //         'message' => 'Apartments retrieved successfully.',
+    //         'data' => $apartments->map(fn ($apt) => ApartmentController::format($apt)),
+    //         'filters' => $request->only(['type', 'rent_type', 'city_id', 'area_id', 'price_min', 'price_max', 'rooms', 'wifi'])
+    //     ], 200);
+    // }
+
     public function filter(ApartmentFilterRequest $request)
     {
-
         $query = Apartment::query()
-            ->where('is_approved', false) // فقط الشقق المعتمدة يعني لازم نحطها ترووو بس مشان التجريب حاليا
-            ->with(['area.city']); // لإرجاع اسم المنطقة والمحافظة مع الشقة
+            ->where('is_approved', true)
+            ->with(['area.city']);
 
-
+        // ------------------ فلتر النوع (type) - يدعم مصفوفة ------------------
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            // إذا أرسل string واحد فقط، نحوله إلى array
+            $types = is_array($request->type) ? $request->type : [$request->type];
+
+            $query->whereIn('type', $types);
         }
 
         // فلتر حسب نوع الإيجار (rent_type)
         if ($request->filled('rent_type')) {
-            if ($request->rent_type === 'day') {
-                // فلتر حسب السعر اليومي
-                if ($request->filled('price_min')) {
-                    $query->where('price_per_day', '>=', $request->price_min);
-                }
-                if ($request->filled('price_max')) {
-                    $query->where('price_per_day', '<=', $request->price_max);
-                }
-            } elseif ($request->rent_type === 'month') {
-                // فلتر حسب السعر الشهري
-                if ($request->filled('price_min')) {
-                    $query->where('price_per_month', '>=', $request->price_min);
-                }
-                if ($request->filled('price_max')) {
-                    $query->where('price_per_month', '<=', $request->price_max);
-                }
-            }
+            $query->where('rent_type', $request->rent_type);
+        }
+        // حسب السعر min و max
+        if ($request->filled('price_min')) {
+            $query->where('price', '>=', $request->price_min);
+        }
+        if ($request->filled('price_max')) {
+            $query->where('price', '<=', $request->price_max);
         }
 
+        // if ($request->filled('rent_type')) {
+        //     if ($request->rent_type === 'day') {
+        //         if ($request->filled('price_min')) {
+        //             $query->where('price_per_day', '>=', $request->price_min);
+        //         }
+        //         if ($request->filled('price_max')) {
+        //             $query->where('price_per_day', '<=', $request->price_max);
+        //         }
+        //     } elseif ($request->rent_type === 'month') {
+        //         if ($request->filled('price_min')) {
+        //             $query->where('price_per_month', '>=', $request->price_min);
+        //         }
+        //         if ($request->filled('price_max')) {
+        //             $query->where('price_per_month', '<=', $request->price_max);
+        //         }
+        //     }
+        // }
 
-        // فلتر حسب المحافظة (city_id)
+        // فلتر المحافظة
         if ($request->filled('city_id')) {
             $query->whereHas('area', function ($q) use ($request) {
                 $q->where('city_id', $request->city_id);
             });
         }
 
-        // فلتر حسب المنطقة (area_id)
+        // فلتر المنطقة
         if ($request->filled('area_id')) {
             $query->where('area_id', $request->area_id);
         }
 
-
-
-        // فلتر حسب عدد الغرف
+        // عدد الغرف
         if ($request->filled('rooms')) {
             $query->where('rooms', $request->rooms);
         }
 
-        // فلتر حسب وجود WiFi
+        // Wifi
         if ($request->filled('wifi')) {
-            $Wifi = filter_var($request->wifi, FILTER_VALIDATE_BOOLEAN);
-            $query->where('wifi', $Wifi);
+            $wifi = filter_var($request->wifi, FILTER_VALIDATE_BOOLEAN);
+            $query->where('wifi', $wifi);
         }
 
-        // فلتر حسب وجود سولار
+        // Solar
         if ($request->filled('solar')) {
-            $Solar = filter_var($request->solar, FILTER_VALIDATE_BOOLEAN);
-            $query->where('solar', $Solar);
+            $solar = filter_var($request->solar, FILTER_VALIDATE_BOOLEAN);
+            $query->where('solar', $solar);
         }
 
+        $apartments = $query->latest()->paginate(12);
 
-
-        // ترتيب حسب الأحدث أولاً (اختياري)
-        $apartments = $query->latest()->paginate(12); // 12 شقة في الصفحة، غيّر الرقم كيف ما بدك
         return response()->json([
             'message' => 'Apartments retrieved successfully.',
-            'data'    => $apartments,
-            'filters' => $request->only(['type', 'rent_type', 'city_id', 'area_id', 'price_min', 'price_max', 'rooms', 'wifi'])
+            'data' => $apartments->map(fn($apt) => ApartmentController::format($apt)),
+            'filters' => $request->only([
+                'type',
+                'rent_type',
+                'city_id',
+                'area_id',
+                'price_min',
+                'price_max',
+                'rooms',
+                'wifi',
+                'solar'
+            ]),
+            'pagination' => [
+                'current_page' => $apartments->currentPage(),
+                'last_page' => $apartments->lastPage(),
+                'per_page' => $apartments->perPage(),
+                'total' => $apartments->total(),
+            ]
         ], 200);
     }
 
+
+    // public function approvedApartments()
+    // {
+    //     $apartments = Apartment::where('is_approved', true)
+    //         ->with(['area.city', 'isCover'])
+    //         ->get();
+
+    //     return response()->json([
+    //         'message' => 'Approved apartments retrieved successfully.',
+    //         'data' => $apartments->map(fn($apt) => ApartmentController::format($apt))
+    //     ], 200);
+    // }
+
+    public function approvedApartments()
+    {
+        $apartments = Apartment::where('is_approved', true)
+            ->with(['area.city', 'isCover', 'owner'])  // ← لازم owner
+            ->get();
+
+        $formatted = $apartments->map(function ($apartment) {
+            $averageRating = $apartment->review->avg('rating');
+
+            return [
+                'apartment' => [
+                    'id'             => $apartment->id,
+                    'title'          => $apartment->title,
+                    'price'          => $apartment->price,
+                    'cover_image'    => $apartment->isCover
+                        ? asset('storage/' . $apartment->isCover->image_path)
+                        : null,
+                    'space'          => (float) $apartment->space,
+                    'bedrooms'       => $apartment->bedrooms,
+                    'bathrooms'      => $apartment->bathrooms,
+                    'rooms'          => $apartment->rooms ?? null,
+                    'address'        => $apartment->area->city->name . '، ' . $apartment->area->name,
+                    'rental_type'    => $apartment->rent_type,
+                    'apartment_type' => $apartment->type,
+                    'average_rating'         => round($averageRating, 1),
+                    'isFavorite' => FavoriteController::isFavorite($apartment->id),
+
+                ],
+                'owner' => [
+                    'id'            => $apartment->owner->id,
+                    'profile_image' => $apartment->owner->profile->profile_photo ?? null,
+                    'full_name'     => $apartment->owner->profile->first_name . ' ' . $apartment->owner->profile->last_name,
+                    'phone_number'  => $apartment->owner->phone_number,
+                    'bio'           => null, // مؤقتاً
+                ]
+            ];
+        });
+
+        return response()->json([
+            'message' => 'Approved apartments retrieved successfully.',
+            'data'    => $formatted
+        ], 200);
+    }
 
 
     // دالة مساعدة لتعيين صورة الغلاف
@@ -350,336 +468,49 @@ class ApartmentController extends Controller
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-public function favorites(int $id)
+    public static function format(Apartment $apartment)
     {
-        $apartment = Apartment::with(['favorites'])->findOrFail($id);
-
-        return response()->json([
-            'message' => 'Apartment favorites retrieved successfully.',
-            'data' => $apartment->favorites
-        ], 200);
-    }
-
-    public function favoriteCount(int $id)
-    {
-        $apartment = Apartment::findOrFail($id);
-        $favoriteCount = $apartment->favorites()->count();
-
-        return response()->json([
-            'message' => 'Apartment favorite count retrieved successfully.',
-            'data' => $favoriteCount
-        ], 200);
-    }
-
-    public function setFavoriteApartment(int $id){
-
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////
-
-    public function apartmentDetails($id)
-    {
-        $apartment = Apartment::with(['area.city', 'apartment_image', 'isCover'])->findOrFail($id);
-
-        return response()->json([
-            'message' => 'Apartment details retrieved successfully.',
-            'data' => $apartment
-        ], 200);
-    }
-
-
-
-
-
-    // Get all reviews for a specific apartment
-    public function reviews($id)
-    {
-        $apartment = Apartment::with(['reviews'])->findOrFail($id);
-
-        return response()->json([
-            'message' => 'Apartment reviews retrieved successfully.',
-            'data' => $apartment->reviews
-        ], 200);
-    }
-
-
-
-
-    // Get total reviews and average rating for a specific apartment
-    public function apartmentRatingsSummary($id)
-    {
-        $apartment = Apartment::findOrFail($id);
-        $totalReviews = $apartment->reviews()->count();
-        $averageRating = $apartment->reviews()->avg('rating');
-
-        return response()->json([
-            'message' => 'Apartment ratings summary retrieved successfully.',
-            'data' => [
-                'total_reviews' => $totalReviews,
-                'average_rating' => $averageRating
-            ]
-        ], 200);
-    }
-
-
-    // Check if a tenant has reviewed a specific apartment
-    public function hasTenantReviewed($apartment_id, $tenant_id)
-    {
-        $apartment = Apartment::findOrFail($apartment_id);
-        $hasReviewed = $apartment->reviews()->where('tenant_id', $tenant_id)->exists();
-
-        return response()->json([
-            'message' => 'Tenant review status retrieved successfully.',
-            'data' => $hasReviewed
-        ], 200);
-    }
-
-
-
-    // Tenant submits a review for an apartment
-    public function reviewApartment(Request $request, $apartment_id)
-    {
-        $tenant_id = FacadesAuth::user()->id;
-
-        // تحقق مما إذا كان المستأجر قد قام بمراجعة هذه الشقة بالفعل
-        $apartment = Apartment::findOrFail($apartment_id);
-        // تحقق اذا كان المستخدم قد قام بحجز هذه الشقة
-        $hasBooked = Booking::where('apartment_id', $apartment_id)->where('tenant_id', $tenant_id)->exists();
-
-        if (!$hasBooked) {
-            return response()->json([
-                'message' => 'You have not booked this apartment.'
-            ], 400);
-        }
-
-        $hasReviewed = $apartment->reviews()->where('tenant_id', $tenant_id)->exists();
-
-        if ($hasReviewed) {
-            return response()->json([
-                'message' => 'You have already reviewed this apartment.'
-            ], 400);
-        }
-
-        // إنشاء المراجعة الجديدة
-        $validatedData = $request->validate([
-            'rating' => 'required|numeric|min:1|max:5',
-            'comment' => 'nullable|string',
-            'booking_id' => 'required|exists:bookings,id'
-        ]);
-
-        $review = Review::create([
-            'apartment_id' => $apartment_id,
-            'tenant_id' => $tenant_id,
-            'booking_id' => $validatedData['booking_id'],
-            'rating' => $validatedData['rating'],
-            'comment' => $validatedData['comment'] ?? null
-        ]);
-
-        return response()->json([
-            'message' => 'Review submitted successfully.',
-            'data' => $review
-        ], 201);
-    }
-
-    public function bookedApartments()
-    {
-        $tenant_id = FacadesAuth::user()->id;
-
-        $bookedApartments = Apartment::whereHas('bookings', function ($query) use ($tenant_id) {
-            $query->where('tenant_id', $tenant_id);
-        })->with(['area.city', 'apartment_image', 'isCover'])->get();
-
-        return response()->json([
-            'message' => 'Booked apartments retrieved successfully.',
-            'data' => $bookedApartments
-        ], 200);
-    }
-
-
-
-
-
-
-
-
-    public function availableApartments()
-    {
-        $tenant_id = FacadesAuth::user()->id;
-
-        $availableApartments = Apartment::whereDoesntHave('bookings', function ($query) use ($tenant_id) {
-            $query->where('tenant_id', $tenant_id);
-        })->with(['area.city', 'apartment_image', 'isCover'])->get();
-
-        return response()->json([
-            'message' => 'Available apartments retrieved successfully.',
-            'data' => $availableApartments
-        ], 200);
-    }
-
-    public function rentedApartments()
-    {
-        $tenant_id = FacadesAuth::user()->id;
-
-        $rentedApartments = Apartment::whereHas('bookings', function ($query) use ($tenant_id) {
-            $query->where('tenant_id', $tenant_id)
-                ->where('status', 'completed'); // فقط الإيجارات المكتملة
-        })->with(['area.city', 'apartment_image', 'isCover'])->get();
-
-        return response()->json([
-            'message' => 'Rented apartments retrieved successfully.',
-            'data' => $rentedApartments
-        ], 200);
-    }
-
-    public function myApartments()
-    {
-        $owner_id = FacadesAuth::user()->id;
-
-        $myApartments = Apartment::where('owner_id', $owner_id)
-            ->with(['area.city', 'apartment_image', 'isCover'])
-            ->get();
-
-        return response()->json([
-            'message' => 'My apartments retrieved successfully.',
-            'data' => $myApartments
-        ], 200);
-    }
-
-    public  function myApprovedApartments()
-    {
-        $owner_id = FacadesAuth::user()->id;
-
-        $myApprovedApartments = Apartment::where('owner_id', $owner_id)
-            ->where('is_approved', true)
-            ->with(['area.city', 'apartment_image', 'isCover'])
-            ->get();
-
-        return response()->json([
-            'message' => 'My approved apartments retrieved successfully.',
-            'data' => $myApprovedApartments
-        ], 200);
-    }
-
-
-    /*
-//admin functions 
-*/
-
-    // approve apartment (admin only)
-    public function approveApartment($id)
-    {
-        $apartment = Apartment::findOrFail($id);
-        $apartment->is_approved = true;
-        $apartment->save();
-
-        return response()->json([
-            'message' => 'Apartment approved successfully.',
-            'apartment' => $apartment
-        ], 200);
-    }
-
-
-
-    // reject apartment (admin only)
-    public function rejectApartment($id)
-    {
-        $apartment = Apartment::findOrFail($id);
-        $apartment->is_approved = false;
-        $apartment->save();
-
-        return response()->json([
-            'message' => 'Apartment rejected successfully.',
-            'apartment' => $apartment
-        ], 200);
-    }
-
-
-
-    // get all apartments (for admin)
-    public function allApartments()
-    {
-        $apartments = Apartment::with(['area.city'])->get();
-
-        return response()->json([
-            'message' => 'All apartments retrieved successfully.',
-            'data' => $apartments
-        ], 200);
-    }
-
-
-
-    // get all pending apartments (for admin)
-    public function pendingApartments()
-    {
-        $apartments = Apartment::where('is_approved', false)->with(['area.city'])->get();
-
-        return response()->json([
-            'message' => 'Pending apartments retrieved successfully.',
-            'data' => $apartments
-        ], 200);
-    }
-
-
-
-    // get all approved apartments (for admin)
-    public function approvedApartments()
-    {
-        $apartments = Apartment::where('is_approved', true)->with(['area.city'])->get();
-
-        return response()->json([
-            'message' => 'Approved apartments retrieved successfully.',
-            'data' => $apartments
-        ], 200);
+        $user = FacadesAuth::user();
+
+        return [
+            'id' => $apartment->id,
+            'type' => ucfirst($apartment->type),
+            'title' => $apartment->title,
+            'discription' => $apartment->discription,
+            'rent_price' => $apartment->price,
+            'rent_type' => $apartment->rent_type,
+
+            'images' => $apartment->apartment_image->map(
+                fn($img) =>
+                asset('storage/' . $img->image_path)
+            )->toArray(),
+
+            'address' => [
+                'city_name' => $apartment->area->city->name ?? null,
+                'area_name' => $apartment->area->name ?? null,
+                'detailed_address' => $apartment->address,
+            ],
+
+            'amenities' => [
+                'bedrooms'   => $apartment->bedrooms,
+                'bathrooms'  => $apartment->bathrooms,
+                'space'      => (float) $apartment->space,
+                'floor'      => $apartment->floor,
+                'has_wifi'   => (bool) $apartment->wifi,
+                'has_solar'  => (bool) $apartment->solar,
+            ],
+
+            'owner' => [
+                'id' => $apartment->owner->id,
+                'full_name' => ($apartment->owner->profile->first_name ?? '') . ' ' .
+                    ($apartment->owner->profile->last_name ?? ''),
+                'phone_number' => $apartment->owner->phone_number ?? null,
+                'profile_image' => $apartment->owner->profile->profile_photo ?? null,
+            ],
+
+            'reviews' => ReviewController::formatForApartment($apartment->id),
+            'isFavorite' => FavoriteController::isFavorite($apartment->id),
+            'isOwner' => $user ? $apartment->owner_id === $user->id : false,
+        ];
     }
 }

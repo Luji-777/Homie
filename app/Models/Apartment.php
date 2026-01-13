@@ -44,13 +44,13 @@ class Apartment extends Model
     }
 
     // Define relationship to Apartment_image model
-    public function apartment_image():HasMany
+    public function apartment_image(): HasMany
     {
         return $this->hasMany(Apartment_image::class);
     }
 
     // Define relationship to Apartment_image model for cover image
-    public function isCover():HasOne
+    public function isCover(): HasOne
     {
         return $this->hasOne(Apartment_image::class)->where('is_cover', true);
     }
@@ -64,8 +64,14 @@ class Apartment extends Model
     // Define relationship to User model for users who favorited this apartment
     public function favoritedByUsers()
     {
-        return $this->belongsToMany(User::class, 'favorites', 'apartment_id', 'user_id')->withTimestamps();
+        return $this->belongsToMany(
+            User::class,
+            'favorites',
+            'apartment_id',
+            'tenant_id'
+        )->withTimestamps();
     }
+
 
     // Define relationship to Message model
     public function message()

@@ -28,52 +28,59 @@ Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanc
 
 Route::apiResource('apartments', ApartmentController::class)->middleware('auth:sanctum');
 // Route::get('apartments/{id}', [ApartmentController::class, 'show']);
-Route::get('/filter', [ApartmentController::class, 'filter']);
-Route::get('/approvedApartments', [ApartmentController::class, 'approvedApartments']);
+Route::get('/filter', [ApartmentController::class, 'filter'])->middleware('auth:sanctum');
+Route::get('/approvedApartments', [ApartmentController::class, 'approvedApartments'])->middleware('auth:sanctum');
 
-
-Route::post('/createReview', [ReviewController::class, 'store']);
+///review//////////////////////////////
+Route::post('/createReview', [ReviewController::class, 'store'])->middleware('auth:sanctum');
 Route::get('/apartmentReview/{id}', [ReviewController::class, 'show']);
-Route::delete('/deleteReview/{id}', [ReviewController::class, 'destroy']);
+Route::delete('/deleteReview/{id}', [ReviewController::class, 'destroy'])->middleware('auth:sanctum');
+Route::get('/topRated', [ReviewController::class, 'topRated'])->middleware('auth:sanctum');
 
-Route::get('/myFavorites', [FavoriteController::class, 'myFavorites']);
-Route::post('/addFavorite', [FavoriteController::class, 'addFavorite']);
-Route::delete('/removeFavorite', [FavoriteController::class, 'removeFavorite']);
+
+///Favorite//////////////////////////////
+Route::get('/myFavorites', [FavoriteController::class, 'myFavorites'])->middleware('auth:sanctum');
+Route::post('/addFavorite', [FavoriteController::class, 'addFavorite'])->middleware('auth:sanctum');
+Route::delete('/removeFavorite', [FavoriteController::class, 'removeFavorite'])->middleware('auth:sanctum');
 Route::get('/isFavorite/{id}', [FavoriteController::class, 'isFavorite']);
 
+
+///cities//////////////////////////////
 Route::get('/cities', [CityController::class, 'cities']);
 Route::get('/areas', [CityController::class, 'areas']);
 
 
-
+///booking//////////////////////////////
 Route::post('/apartments/{apartment}/book', [BookingController::class, 'store'])->middleware('auth:sanctum');
-
-
 Route::get('/apartments/{id}/booked-dates', [BookingController::class, 'getBookedDates']);
-
 Route::post('/bookings/{bookingId}/owner-response', [BookingController::class, 'handleOwnerResponse'])
-    ->middleware('auth:sanctum') // أو auth:api حسب نظام الـ authentication عندك
+    ->middleware('auth:sanctum') 
     ->name('bookings.owner-response');
-
-Route::get('/myBookings', [BookingController::class, 'myBookings'])->middleware('auth:sanctum'); // بحاجة تجريب وتعديل الكود من عند لجين
-
+Route::get('/myBookings', [BookingController::class, 'myBookings'])->middleware('auth:sanctum'); 
 
 
 // طلب إلغاء من المستأجر
 Route::post('/bookings/{bookingId}/request-cancellation', [BookingController::class, 'requestCancellation'])
+    ->middleware('auth:sanctum')
     ->name('bookings.request-cancellation');
 
 // موافقة المالك على الإلغاء
-Route::post('/bookings/{bookingId}/approve-cancellation', [BookingController::class, 'approveCancellation'])
+Route::post('/bookings/{bookingId}/cancellation-response', [BookingController::class, 'handleCancellationResponse'])
+    ->middleware('auth:sanctum')
     ->name('bookings.approve-cancellation');
+
 
 // طلب تعديل من المستأجر
 Route::post('/bookings/{bookingId}/request-modification', [BookingController::class, 'requestModification'])
+    ->middleware('auth:sanctum')
     ->name('bookings.request-modification');
 
-// موافقة المالك على التعديل
-Route::post('/bookings/{bookingId}/approve-modification', [BookingController::class, 'approveModification'])
-    ->name('bookings.approve-modification');
+    // // موافقة المالك على التعديل
+    Route::post('/bookings/{bookingId}/modification-response', [BookingController::class, 'handleModificationResponse'])
+        ->middleware('auth:sanctum')
+        ->name('bookings.modification-response');
+// Route::post('/bookings/{bookingId}/approve-modification', [BookingController::class, 'approveModification'])
+//     ->name('bookings.approve-modification');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);

@@ -11,26 +11,70 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Schema::create('bookings', function (Blueprint $table) {
+        //     $table->id();
+
+        //     $table->foreignId('apartment_id')->constrained('apartments')->onDelete('cascade');
+        //     $table->foreignId('owner_id')->constrained('users')->onDelete('cascade'); // هاد بجوز مش ضروري لأنه فينا نجيب owner من الapartment
+        //     $table->foreignId('tenant_id')->constrained('users')->onDelete('cascade');
+        //     $table->date('check_in');
+        //     $table->date('check_out');
+        //     $table->float('total_price')->nullable();
+        //     $table->enum('status',[
+        //         'pending',
+        //         'owner_approved',
+        //         'owner_rejected',
+        //         'paid',
+        //         'cancelled',
+        //         'completed',
+        //         ])->default('pending')->nullable();
+        //     $table->text('cancellation_reason')->nullable();
+        //     $table->boolean('owner_approval')->default(false)->nullable(); // موافقة المالك
+
+
+        //     $table->timestamps();
+        // });
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('apartment_id')->constrained('apartments')->onDelete('cascade');
-            $table->foreignId('owner_id')->constrained('users')->onDelete('cascade'); // هاد بجوز مش ضروري لأنه فينا نجيب owner من الapartment
+            $table->foreignId('apartment_id')->constrained()->onDelete('cascade');
             $table->foreignId('tenant_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
+
             $table->date('check_in');
             $table->date('check_out');
-            $table->float('total_price')->nullable();
-            $table->enum('status',[
+            $table->decimal('total_price', 12, 2);
+
+            $table->enum('status', [
                 'pending',
                 'owner_approved',
                 'owner_rejected',
-                'paid',
                 'cancelled',
                 'completed',
-                ])->default('pending')->nullable();
-            $table->text('cancellation_reason')->nullable();
-            $table->boolean('owner_approval')->default(false)->nullable(); // موافقة المالك
+            ])->default('pending');
 
+            $table->enum('request_status', [
+                'new',
+                'pending_owner',
+                'owner_accepted',
+                'owner_rejected',
+                'tenant_cancel_request',
+                'owner_cancel_accepted',
+                'owner_cancel_rejected',
+                'tenant_modify_request',
+                'owner_modify_accepted',
+                'owner_modify_rejected',
+                'completed',
+            ])->default('new');
+            
+            $table->text('cancellation_reason')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
+            
+            
+            // $table->decimal('refund_amount', 12, 2)->nullable();     // كم تم إرجاعه فعلياً
+            // $table->integer('refund_percentage')->nullable();        // 100 أو 50 (أو 0 مستقبلاً)
+
+            // // يمكن إبقاء هذا مؤقتاً للتوافق مع الكود القديم
+            // $table->boolean('owner_approval')->default(false);
 
             $table->timestamps();
         });

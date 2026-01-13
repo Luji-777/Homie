@@ -14,6 +14,7 @@ class Booking extends Model
         'check_out',
         'total_price',
         'status',
+        'request_status',
         'cancellation_reason',
         'owner_approval',
     ];

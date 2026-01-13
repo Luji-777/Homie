@@ -150,29 +150,71 @@ class UserController extends Controller
     // ممكن نضيف تحقق ثنائي في المستقبل
     // ممكن نضيف تقييد لعدد محاولات الدخول الفاشلة
     // ممكن نضيف ميزة "تذكرني" في المستقبل
+    // public function login(Request $request)
+    // {
+    //     $request->validate([
+    //         'phone_number' => 'required|digits_between:9,15',
+    //         'password' => 'required|string|min:6|max:255'
+    //     ]);
+
+    //     // التحقق من بيانات الدخول
+    //     if (!Auth::attempt($request->only('phone_number', 'password'))) {
+    //         return response()->json([
+    //             'message' => 'Invalid login details'
+    //         ], 401);
+    //     }
+    //     // إنشاء توكن جديد للمستخدم
+    //     $user = User::where('phone_number', $request->phone_number)->first();
+    //     $token = $user->createToken('auth_Token')->plainTextToken;
+
+    //     // إعادة استجابة بنجاح الدخول
+    //     return response()->json([
+    //         'message' => 'Login successful',
+    //         'user' => FacadesAuth::user(),
+    //         'Token' => $token
+    //     ], 201);
+    // }
     public function login(Request $request)
     {
         $request->validate([
             'phone_number' => 'required|digits_between:9,15',
-            'password' => 'required|string|min:6|max:255'
+            'password'     => 'required|string|min:6|max:255'
         ]);
 
-        // التحقق من بيانات الدخول
         if (!Auth::attempt($request->only('phone_number', 'password'))) {
             return response()->json([
                 'message' => 'Invalid login details'
             ], 401);
         }
-        // إنشاء توكن جديد للمستخدم
-        $user = User::where('phone_number', $request->phone_number)->first();
-        $token = $user->createToken('auth_Token')->plainTextToken;
 
-        // إعادة استجابة بنجاح الدخول
+        $user = User::where('phone_number', $request->phone_number)->first();
+
+        // إنشاء التوكن
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // جلب الـ city_id من العلاقة profile
+        $city_id = $user->profile?->city_id;
+
         return response()->json([
-            'message' => 'Login successful',
-            'user' => FacadesAuth::user(),
-            'Token' => $token
-        ], 201);
+            'message'      => 'Login successful',
+            'user'         => [
+                'id'            => $user->id,
+                'phone_number'  => $user->phone_number,
+                'name'          => $user->name,
+                'is_verified'   => $user->is_verified,
+                'first_name'   => $user->profile?->first_name,
+                'last_name'    => $user->profile?->last_name,
+                'city_id'      => $city_id,
+            ],
+            // 'profile' => [
+            //     'first_name'   => $user->profile?->first_name,
+            //     'last_name'    => $user->profile?->last_name,
+            //     'city_id'      => $city_id,
+            //     // 'area_id'      => $user->profile?->area_id,
+            // ],
+            'Token'        => $token,
+            // 'token_type'   => 'Bearer',
+        ], 200);
     }
 
     // تسجيل الخروج

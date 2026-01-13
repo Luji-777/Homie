@@ -23,10 +23,11 @@ class ApartmentController extends Controller
     {
         $apartments = FacadesAuth::user()->apartments()->with(['area.city'])->get();
         return response()->json([
-        'status' => 'success',
-        'data' => $apartments->map(fn ($apt) => ApartmentController::format($apt)
-        )
-    ]);
+            'status' => 'success',
+            'data' => $apartments->map(
+                fn($apt) => ApartmentController::format($apt)
+            )
+        ]);
     }
 
 
@@ -177,22 +178,100 @@ class ApartmentController extends Controller
 
 
 
+    // public function filter(ApartmentFilterRequest $request)
+    // {
+
+    //     $query = Apartment::query()
+    //         ->where('is_approved', true) // فقط الشقق المعتمدة يعني لازم نحطها ترووو بس مشان التجريب حاليا
+    //         ->with(['area.city']); // لإرجاع اسم المنطقة والمحافظة مع الشقة
+
+
+    //         // إدخال أكثر من نوع
+    //     if ($request->filled('type')) {
+    //         $query->where('type', $request->type);
+    //     }
+
+    //     // فلتر حسب نوع الإيجار (rent_type)
+    //     if ($request->filled('rent_type')) {
+    //         if ($request->rent_type === 'day') {
+    //             // فلتر حسب السعر اليومي
+    //             if ($request->filled('price_min')) {
+    //                 $query->where('price_per_day', '>=', $request->price_min);
+    //             }
+    //             if ($request->filled('price_max')) {
+    //                 $query->where('price_per_day', '<=', $request->price_max);
+    //             }
+    //         } elseif ($request->rent_type === 'month') {
+    //             // فلتر حسب السعر الشهري
+    //             if ($request->filled('price_min')) {
+    //                 $query->where('price_per_month', '>=', $request->price_min);
+    //             }
+    //             if ($request->filled('price_max')) {
+    //                 $query->where('price_per_month', '<=', $request->price_max);
+    //             }
+    //         }
+    //     }
+
+
+    //     // فلتر حسب المحافظة (city_id)
+    //     if ($request->filled('city_id')) {
+    //         $query->whereHas('area', function ($q) use ($request) {
+    //             $q->where('city_id', $request->city_id);
+    //         });
+    //     }
+
+    //     // فلتر حسب المنطقة (area_id)
+    //     if ($request->filled('area_id')) {
+    //         $query->where('area_id', $request->area_id);
+    //     }
+
+
+
+    //     // فلتر حسب عدد الغرف
+    //     if ($request->filled('rooms')) {
+    //         $query->where('rooms', $request->rooms);
+    //     }
+
+    //     // فلتر حسب وجود WiFi
+    //     if ($request->filled('wifi')) {
+    //         $Wifi = filter_var($request->wifi, FILTER_VALIDATE_BOOLEAN);
+    //         $query->where('wifi', $Wifi);
+    //     }
+
+    //     // فلتر حسب وجود سولار
+    //     if ($request->filled('solar')) {
+    //         $Solar = filter_var($request->solar, FILTER_VALIDATE_BOOLEAN);
+    //         $query->where('solar', $Solar);
+    //     }
+
+
+
+    //     // ترتيب حسب الأحدث أولاً (اختياري)
+    //     $apartments = $query->latest()->paginate(12); // 12 شقة في الصفحة، غيّر الرقم كيف ما بدك
+    //     return response()->json([
+    //         'message' => 'Apartments retrieved successfully.',
+    //         'data' => $apartments->map(fn ($apt) => ApartmentController::format($apt)),
+    //         'filters' => $request->only(['type', 'rent_type', 'city_id', 'area_id', 'price_min', 'price_max', 'rooms', 'wifi'])
+    //     ], 200);
+    // }
+
     public function filter(ApartmentFilterRequest $request)
     {
-
         $query = Apartment::query()
-            ->where('is_approved', true) // فقط الشقق المعتمدة يعني لازم نحطها ترووو بس مشان التجريب حاليا
-            ->with(['area.city']); // لإرجاع اسم المنطقة والمحافظة مع الشقة
+            ->where('is_approved', true)
+            ->with(['area.city']);
 
-
+        // ------------------ فلتر النوع (type) - يدعم مصفوفة ------------------
         if ($request->filled('type')) {
-            $query->where('type', $request->type);
+            // إذا أرسل string واحد فقط، نحوله إلى array
+            $types = is_array($request->type) ? $request->type : [$request->type];
+
+            $query->whereIn('type', $types);
         }
 
         // فلتر حسب نوع الإيجار (rent_type)
         if ($request->filled('rent_type')) {
             if ($request->rent_type === 'day') {
-                // فلتر حسب السعر اليومي
                 if ($request->filled('price_min')) {
                     $query->where('price_per_day', '>=', $request->price_min);
                 }
@@ -200,7 +279,6 @@ class ApartmentController extends Controller
                     $query->where('price_per_day', '<=', $request->price_max);
                 }
             } elseif ($request->rent_type === 'month') {
-                // فلتر حسب السعر الشهري
                 if ($request->filled('price_min')) {
                     $query->where('price_per_month', '>=', $request->price_min);
                 }
@@ -210,46 +288,57 @@ class ApartmentController extends Controller
             }
         }
 
-
-        // فلتر حسب المحافظة (city_id)
+        // فلتر المحافظة
         if ($request->filled('city_id')) {
             $query->whereHas('area', function ($q) use ($request) {
                 $q->where('city_id', $request->city_id);
             });
         }
 
-        // فلتر حسب المنطقة (area_id)
+        // فلتر المنطقة
         if ($request->filled('area_id')) {
             $query->where('area_id', $request->area_id);
         }
 
-
-
-        // فلتر حسب عدد الغرف
+        // عدد الغرف
         if ($request->filled('rooms')) {
             $query->where('rooms', $request->rooms);
         }
 
-        // فلتر حسب وجود WiFi
+        // Wifi
         if ($request->filled('wifi')) {
-            $Wifi = filter_var($request->wifi, FILTER_VALIDATE_BOOLEAN);
-            $query->where('wifi', $Wifi);
+            $wifi = filter_var($request->wifi, FILTER_VALIDATE_BOOLEAN);
+            $query->where('wifi', $wifi);
         }
 
-        // فلتر حسب وجود سولار
+        // Solar
         if ($request->filled('solar')) {
-            $Solar = filter_var($request->solar, FILTER_VALIDATE_BOOLEAN);
-            $query->where('solar', $Solar);
+            $solar = filter_var($request->solar, FILTER_VALIDATE_BOOLEAN);
+            $query->where('solar', $solar);
         }
 
+        $apartments = $query->latest()->paginate(12);
 
-
-        // ترتيب حسب الأحدث أولاً (اختياري)
-        $apartments = $query->latest()->paginate(12); // 12 شقة في الصفحة، غيّر الرقم كيف ما بدك
         return response()->json([
             'message' => 'Apartments retrieved successfully.',
-            'data' => $apartments->map(fn ($apt) => ApartmentController::format($apt)),
-            'filters' => $request->only(['type', 'rent_type', 'city_id', 'area_id', 'price_min', 'price_max', 'rooms', 'wifi'])
+            'data' => $apartments->map(fn($apt) => ApartmentController::format($apt)),
+            'filters' => $request->only([
+                'type',
+                'rent_type',
+                'city_id',
+                'area_id',
+                'price_min',
+                'price_max',
+                'rooms',
+                'wifi',
+                'solar'
+            ]),
+            'pagination' => [
+                'current_page' => $apartments->currentPage(),
+                'last_page' => $apartments->lastPage(),
+                'per_page' => $apartments->perPage(),
+                'total' => $apartments->total(),
+            ]
         ], 200);
     }
 
@@ -262,7 +351,7 @@ class ApartmentController extends Controller
 
         return response()->json([
             'message' => 'Approved apartments retrieved successfully.',
-            'data' => $apartments->map(fn ($apt) => ApartmentController::format($apt))
+            'data' => $apartments->map(fn($apt) => ApartmentController::format($apt))
         ], 200);
     }
 

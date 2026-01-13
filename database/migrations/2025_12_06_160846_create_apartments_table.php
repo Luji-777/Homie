@@ -24,8 +24,12 @@ return new class extends Migration
             $table->text('discription');                                                
             $table->string('title');
             $table->string('address');
-            $table->float('price_per_day');
-            $table->float('price_per_month');
+
+            $table->enum('rent_type',[
+                'day',
+                'month'
+            ]);
+            $table->float('price');
             $table->float('space');
             $table->string('floor');
             $table->integer('rooms');

@@ -87,13 +87,20 @@ class BookingController extends Controller
         $totalDays = $checkIn->diffInDays($checkOut) + 1;
 
         // حساب السعر (يومي أو شهري)
-        if ($totalDays >= 30) {
+        if ($apartment->rent_type === 'month') {
             $fullMonths = floor($totalDays / 30);
             $remainingDays = $totalDays % 30;
-            $totalPrice = ($fullMonths * $apartment->price_per_month) + ($remainingDays * $apartment->price_per_day);
+            $totalPrice = ($fullMonths * $apartment->price) + ($remainingDays * ($apartment->price / 30));
         } else {
-            $totalPrice = $totalDays * $apartment->price_per_day;
+            $totalPrice = $totalDays * $apartment->price;
         }
+        // if ($totalDays >= 30) {
+        //     $fullMonths = floor($totalDays / 30);
+        //     $remainingDays = $totalDays % 30;
+        //     $totalPrice = ($fullMonths * $apartment->price_per_month) + ($remainingDays * $apartment->price_per_day);
+        // } else {
+        //     $totalPrice = $totalDays * $apartment->price_per_day;
+        // }
 
         // إنشاء الحجز بحالة pending و owner_approval = false
         $booking = Booking::create([

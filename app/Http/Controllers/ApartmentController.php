@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Storage;
 class ApartmentController extends Controller
 {
 
-    // Display a listing of the resource.
+    // شقق المستخدم
     public function index()
     {
         $apartments = FacadesAuth::user()->apartments()->with(['area.city'])->get();
@@ -271,22 +271,33 @@ class ApartmentController extends Controller
 
         // فلتر حسب نوع الإيجار (rent_type)
         if ($request->filled('rent_type')) {
-            if ($request->rent_type === 'day') {
-                if ($request->filled('price_min')) {
-                    $query->where('price_per_day', '>=', $request->price_min);
-                }
-                if ($request->filled('price_max')) {
-                    $query->where('price_per_day', '<=', $request->price_max);
-                }
-            } elseif ($request->rent_type === 'month') {
-                if ($request->filled('price_min')) {
-                    $query->where('price_per_month', '>=', $request->price_min);
-                }
-                if ($request->filled('price_max')) {
-                    $query->where('price_per_month', '<=', $request->price_max);
-                }
-            }
+            $query->where('rent_type', $request->rent_type);
         }
+        // حسب السعر min و max
+        if ($request->filled('price_min')) {
+            $query->where('price', '>=', $request->price_min);
+        }
+        if ($request->filled('price_max')) {
+            $query->where('price', '<=', $request->price_max);
+        }
+        
+        // if ($request->filled('rent_type')) {
+        //     if ($request->rent_type === 'day') {
+        //         if ($request->filled('price_min')) {
+        //             $query->where('price_per_day', '>=', $request->price_min);
+        //         }
+        //         if ($request->filled('price_max')) {
+        //             $query->where('price_per_day', '<=', $request->price_max);
+        //         }
+        //     } elseif ($request->rent_type === 'month') {
+        //         if ($request->filled('price_min')) {
+        //             $query->where('price_per_month', '>=', $request->price_min);
+        //         }
+        //         if ($request->filled('price_max')) {
+        //             $query->where('price_per_month', '<=', $request->price_max);
+        //         }
+        //     }
+        // }
 
         // فلتر المحافظة
         if ($request->filled('city_id')) {
@@ -423,8 +434,8 @@ class ApartmentController extends Controller
             'type' => ucfirst($apartment->type),
             'title' => $apartment->title,
             'description' => $apartment->discription,
-            'rent_price' => $apartment->price_per_month,
-            'rent_type' => 'monthly',
+            'rent_price' => $apartment->price,
+            'rent_type' => $apartment->rent_type,
 
             'images' => $apartment->apartment_image->map(
                 fn($img) =>

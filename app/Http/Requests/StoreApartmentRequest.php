@@ -31,8 +31,15 @@ class StoreApartmentRequest extends FormRequest
             'discription' => 'required|string',
             'title' => 'required|string|max:255',
             'address' => 'required|string|max:255',
-            'price_per_day' => 'required|numeric|min:0',
-            'price_per_month' => 'required|numeric|min:0',
+
+            'rent_type' => [
+                'required',
+                Rule::in([
+                    'day',
+                    'month'
+                ])
+            ],
+            'price' => 'required|numeric|min:0',
             'space' => 'required|numeric|min:0',
             'floor' => 'required|string|max:50',
             'rooms' => 'required|integer|min:0',

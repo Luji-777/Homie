@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Requests;
+use Illuminate\Validation\Rule;
 
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -27,8 +28,15 @@ class UpdateApartmentRequest extends FormRequest
             'discription' => 'string',
             'title' => 'string|max:255',
             'address' => 'string|max:255',
-            'price_per_day' => 'numeric|min:0',
-            'price_per_month' => 'numeric|min:0',
+
+            'rent_type' => [
+                'sometimes',
+                Rule::in([
+                    'day',
+                    'month'
+                ])
+            ],
+            'price' => 'numeric|min:0',
             // 'space' => 'numeric|min:0',
             // 'floor' => 'string|max:50',
             // 'rooms' => 'integer|min:0',

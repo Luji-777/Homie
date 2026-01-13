@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
-    public function send(User $user, string $title,string $body , string $type, ?int $relatedId = null)
+    public function send(User $user, string $title,string $body , string $type)
     {
         // 1. خزن الإشعار في الداتا بيز أولاً
         $notification = Notification::create([
@@ -18,7 +18,6 @@ class NotificationService
             'title'   => $title,
             'body'    => $body,
             'type'       => $type,
-            'related_id' => $relatedId,
         ]);
 
         // 2. إرسال push عبر FCM إذا كان عنده token
@@ -33,7 +32,6 @@ class NotificationService
                     ])
                     ->withData([
                         'type'       => $type,
-                        'related_id' => (string) $relatedId,
                         'notification_id' => (string) $notification->id,
                     ]);
 

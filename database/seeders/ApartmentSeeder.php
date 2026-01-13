@@ -30,9 +30,9 @@ class ApartmentSeeder extends Seeder
                 'discription' => 'Seeder apartment description ' . $i, // نفس اسم العمود
                 'type' => fake()->randomElement(['room', 'studio', 'house', 'villa']),
                 'address' => 'Test Address ' . $i,
-                'price_per_day' => rand(10, 50),
-                'price_per_month' => rand(300, 1200),
+                'price' => rand(10, 50),
                 'space' => rand(50, 250),
+                'rent_type'=>'day',
                 'floor' => fake()->randomElement(['ground', '1', '2', '3']),
                 'rooms' => rand(1, 5),
                 'bedrooms' => rand(1, 4),

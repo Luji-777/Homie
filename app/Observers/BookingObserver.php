@@ -39,7 +39,7 @@ class BookingObserver
             'tenant_cancel_request' => 'Pending owner approval to cancel the booking',
 
 
-            'tenant_modify_request'=>'Pending owner approval to modifiy the booking',
+            'tenant_modify_request'=>'Pending owner approval to modify the booking',
             'owner_modify_accepted'=>   'Booking modified',
             'owner_modify_rejected'=>   'The modification request was rejected',
             'completed'      => 'Booking Completed',

@@ -230,6 +230,9 @@ class BookingController extends Controller
         $bookings = $query->latest()->paginate(10);
 
         $formattedBookings = $bookings->map(function ($booking) {
+            $apartment = $booking->apartment;
+
+
             $statusText = match ($booking->status) {
                 'pending'          => 'Pending Owner Approval',
                 'owner_approved'   => 'Approved',
@@ -240,13 +243,39 @@ class BookingController extends Controller
             };
 
             return [
-                'property_type'   => $booking->apartment->type ?? 'Not specified',
-                'title'  =>          $booking->apartment->title ?? 'Not specified',
-                'rental_period'   => $booking->check_in . ' to ' . $booking->check_out,
-                'main_image'      => $booking->apartment->main_image ?? null, //edit
-                'city'            => $booking->apartment->city ?? 'Not specified',
-                'address'         => $booking->apartment->address ?? 'Not specified',
-                'booking_status'  => $statusText,
+                'id'          => $apartment->id,
+                'type'        => ucfirst($apartment->type ?? 'غير محدد'),
+                'title'       => $apartment->title ?? 'غير محدد',
+                'start_date'     => $booking->check_in,
+                'end_date'       => $booking->check_out,
+
+                'cover_image' => $apartment->apartment_image?->first()
+                    ? asset('storage/' . $apartment->apartment_image->first()->image_path)
+                    : null,
+
+                'address' => [
+                    'city_name'       => $apartment->area?->city?->name ?? null,
+                    'area_name'       => $apartment->area?->name ?? null,
+                    'detailed_address' => $apartment->address ?? null,
+                ],
+
+                'owner' => [
+                    'id'           => $apartment->owner?->id,
+                    'full_name'    => trim(
+                        ($apartment->owner?->profile?->first_name ?? '') . ' ' .
+                            ($apartment->owner?->profile?->last_name ?? '')
+                    ) ?: 'غير محدد',
+                    'phone_number' => $apartment->owner?->phone_number ?? null,
+                    'profile_image' => $apartment->owner?->profile?->profile_photo ?? null,
+                ],
+
+                // معلومات الحجز الإضافية
+
+                'booking_status' => $statusText,
+
+                // // اختياري - إذا بدك تضيف معلومات إضافية عن الحجز نفسها
+                // 'booking_id'     => $booking->id,
+                // 'isOwner'        => $apartment->owner_id === FacadesAuth::user()->id,
             ];
         });
 
@@ -259,6 +288,74 @@ class BookingController extends Controller
         ]);
     }
 
+
+    // public function myBookings(Request $request)
+    // {
+    //     $user = FacadesAuth::user(); // أفضل بدون Facades\ في الغالب
+
+    //     $type = $request->input('type'); // completed, cancelled, current
+
+    //     $query = Booking::where('tenant_id', $user->id)
+    //         ->with([
+    //             'apartment' => function ($q) {
+    //                 $q->with('address'); // افتراضاً أن عندك علاقة address
+    //             }
+    //         ]);
+
+    //     // تصفية حسب النوع
+    //     if ($type === 'completed') {
+    //         $query->where('status', 'completed');
+    //     } elseif ($type === 'cancelled') {
+    //         $query->where('status', 'cancelled');
+    //     } elseif ($type === 'current') {
+    //         $query->whereIn('status', ['pending', 'owner_approved', 'owner_rejected']);
+    //     }
+    //     // بدون type → يرجع كل الحجوزات
+
+    //     $bookings = $query->latest()->paginate(10);
+
+    //     $formattedBookings = $bookings->map(function ($booking) {
+
+    //         $statusText = match ($booking->status) {
+    //             'pending'        => 'Pending Owner Approval',
+    //             'owner_approved' => 'Approved',
+    //             'owner_rejected' => 'Rejected',
+    //             'completed'      => 'Completed',
+    //             'cancelled'      => 'Cancelled',
+    //             default          => $booking->status,
+    //         };
+
+    //         return [
+    //             'id'          => $booking->id,
+    //             'type'        => $booking->apartment->type ?? 'Not specified',
+    //             'title'       => $booking->apartment->title ?? 'Not specified',
+    //             'start_date'  => $booking->check_in,
+    //             'end_date'    => $booking->check_out,
+    //             'cover_image' => $booking->apartment->main_image ?? null,
+    //             'address'     => [
+    //                 'id'              => $booking->apartment->address?->id ?? null,
+    //                 'city_name'       => $booking->apartment->address?->city_name ?? 'غير محدد',
+    //                 'area_name'       => $booking->apartment->address?->area_name ?? null,
+    //                 'detailed_address' => $booking->apartment->address?->detailed_address ?? null,
+    //             ],
+    //             'owner'       => [
+    //                 'id'           => $booking->apartment->owner?->id,
+    //                 'full_name'    => $booking->apartment->owner?->full_name,
+    //                 'phone_number' => $booking->apartment->owner?->phone_number,
+    //                 'profile_image' => $booking->apartment->owner?->profile_image ?? 'profiles/default-profile.png',
+    //             ],
+    //             'booking_status' => $statusText,
+    //         ];
+    //     });
+
+    //     return response()->json([
+    //         'bookings'     => $formattedBookings,
+    //         'current_page' => $bookings->currentPage(),
+    //         'last_page'    => $bookings->lastPage(),
+    //         'total'        => $bookings->total(),
+    //         'per_page'     => $bookings->perPage(),
+    //     ]);
+    // }
 
 
 

@@ -70,12 +70,56 @@ class BookingController extends Controller
                 'required',
                 'date',
                 'after:check_in',
-                new NoOverlappingBooking(
-                    $id,
-                    $request->check_in
-                ),
+                // new NoOverlappingBooking(
+                //     $id,
+                //     $request->check_in
+                // ),
             ],
         ]);
+
+
+
+        try {
+            $tempCheckIn = Carbon::parse($validated['check_in']);
+            $tempCheckOut = Carbon::parse($validated['check_out']);
+
+            $displayCheckIn = $tempCheckIn->format('j-n-Y');
+            $displayCheckOut = $tempCheckOut->format('j-n-Y');
+
+            $dbCheckIn = $tempCheckIn->format('Y-m-d');
+            $dbCheckOut = $tempCheckOut->format('Y-m-d');
+        } catch (\Exception $e) {
+            return response()->json([
+                // 'message' => 'صيغة التاريخ غير صالحة'
+                'message' => __('api.invalid_date_format')
+            ], 422);
+        }
+
+        // فحص التداخل الصحيح
+        $overlapData = ['check_in' => $dbCheckIn, 'check_out' => $dbCheckOut];
+        $overlapValidator = Validator::make(
+            ['check_out' => $dbCheckOut],
+            [
+                'check_out' => [
+                    new NoOverlappingBooking(
+                        $id,
+                        $request->check_in
+                    )
+                ],
+            ]
+        );
+
+
+        if ($overlapValidator->fails()) {
+            return response()->json([
+                // 'message' => 'التواريخ الجديدة متداخلة مع حجز آخر مؤكد'
+                'message' => __('api.overlapping_dates')
+            ], 422);
+        }
+
+
+
+
         $apartment = Apartment::findOrFail($id);
 
         // حساب عدد الأيام
@@ -107,7 +151,8 @@ class BookingController extends Controller
         // التحقق من الرصيد قبل إنشاء الحجز
         if ($tenant->balance < $totalPrice) {
             return response()->json([
-                'message' => 'رصيدك غير كافٍ لإتمام هذا الحجز',
+                // 'message' => 'رصيدك غير كافٍ لإتمام هذا الحجز',
+                'message' => __('api.insufficient_balance'),
                 'required' => $totalPrice,
                 'current_balance' => $tenant->balance,
             ], 400);
@@ -133,7 +178,8 @@ class BookingController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'تم تقديم طلب الحجز بنجاح، بانتظار موافقة صاحب الشقة',
+            // 'message' => 'تم تقديم طلب الحجز بنجاح، بانتظار موافقة صاحب الشقة',
+            'message' => __('api.booking_request_sent'),
             'booking' => $booking,
             'total_price' => $totalPrice,
             'new_balance' => $tenant->balance,
@@ -152,14 +198,16 @@ class BookingController extends Controller
         // التأكد إن اللي بيعمل الطلب هو صاحب الشقة فعلاً
         if ($booking->owner_id !== FacadesAuth::user()->id) {
             return response()->json([
-                'message' => 'غير مصرح لك بإدارة هذا الحجز'
+                // 'message' => 'غير مصرح لك بإدارة هذا الحجز'
+                'message' => __('api.not_authorized_to_manage')
             ], 403);
         }
 
         // التأكد إن الحجز لا يزال معلق (pending)
         if ($booking->status !== 'pending') {
             return response()->json([
-                'message' => 'لا يمكن تغيير حالة حجز غير معلق'
+                // 'message' => 'لا يمكن تغيير حالة حجز غير معلق'
+                'message' => __('api.cannot_change_non_pending')
             ], 400);
         }
 
@@ -182,7 +230,8 @@ class BookingController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'تمت الموافقة على الحجز وتحويل المبلغ لحسابك بنجاح',
+                // 'message' => 'تمت الموافقة على الحجز وتحويل المبلغ لحسابك بنجاح',
+                'message' => __('api.approved_and_transferred'),
                 'booking' => $booking->fresh()
             ], 200);
         }
@@ -198,7 +247,8 @@ class BookingController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'تم رفض الحجز وإرجاع المبلغ للمستأجر',
+                // 'message' => 'تم رفض الحجز وإرجاع المبلغ للمستأجر'و
+                'message' => __('api.rejected_and_refunded'),
                 'booking' => $booking->fresh()
             ], 200);
         }
@@ -233,18 +283,19 @@ class BookingController extends Controller
             $apartment = $booking->apartment;
 
 
-            $statusText = match ($booking->status) {
-                'pending'          => 'Pending Owner Approval',
-                'owner_approved'   => 'Approved',
-                'owner_rejected'   => 'Rejected',
-                'completed'        => 'Completed',
-                'cancelled'        => 'Cancelled',
-                default            => $booking->status,
-            };
+            // $statusText = match ($booking->status) {
+            //     'pending'          => 'Pending Owner Approval',
+            //     'owner_approved'   => 'Approved',
+            //     'owner_rejected'   => 'Rejected',
+            //     'completed'        => 'Completed',
+            //     'cancelled'        => 'Cancelled',
+            //     default            => $booking->status,
+            // };
 
             return [
                 'id'          => $apartment->id,
-                'type'        => ucfirst($apartment->type ?? 'غير محدد'),
+                // 'type'        => ucfirst($apartment->type ?? 'غير محدد'),
+                'type'  => __('api.type_' . $apartment->type),
                 'title'       => $apartment->title ?? 'غير محدد',
                 'start_date'     => $booking->check_in,
                 'end_date'       => $booking->check_out,
@@ -254,8 +305,9 @@ class BookingController extends Controller
                     : null,
 
                 'address' => [
-                    'city_name'       => $apartment->area?->city?->name ?? null,
-                    'area_name'       => $apartment->area?->name ?? null,
+                    'city_name'       => __('cities.' . ($apartment->area->city->name ?? '')),
+
+                    'area_name' => __('areas.' . ($apartment->area->name ?? '')),
                     'detailed_address' => $apartment->address ?? null,
                 ],
 
@@ -271,7 +323,7 @@ class BookingController extends Controller
 
                 // معلومات الحجز الإضافية
 
-                'booking_status' => $statusText,
+                'booking_status' => __('api.' . $booking->status),
 
                 // // اختياري - إذا بدك تضيف معلومات إضافية عن الحجز نفسها
                 // 'booking_id'     => $booking->id,
@@ -367,13 +419,15 @@ class BookingController extends Controller
 
         if ($booking->tenant_id !== FacadesAuth::user()->id) {
             return response()->json([
-                'message' => 'غير مصرح لك بهذا الإجراء'
+                // 'message' => 'غير مصرح لك بهذا الإجراء'
+                'message' => __('api.not_authorized_to_cancel')
             ], 403);
         }
 
         if (!in_array($booking->status, ['owner_approved'])) {
             return response()->json([
-                'message' => 'لا يمكن إلغاء حجز غير مؤكد'
+                // 'message' => 'لا يمكن إلغاء حجز غير مؤكد'
+                'message' => __('api.cannot_cancel_unconfirmed')
             ], 400);
         }
 
@@ -390,7 +444,8 @@ class BookingController extends Controller
         // هنا ممكن ترسل notification للمالك
 
         return response()->json([
-            'message' => 'تم إرسال طلب الإلغاء بنجاح، بانتظار موافقة صاحب الشقة',
+            // 'message' => 'تم إرسال طلب الإلغاء بنجاح، بانتظار موافقة صاحب الشقة',
+            'message' => __('api.cancellation_request_sent'),
             'booking' => $booking->fresh()
         ], 200);
     }
@@ -403,13 +458,15 @@ class BookingController extends Controller
         // التأكد إن المستخدم هو المالك
         if ($booking->owner_id !== FacadesAuth::user()->id) {
             return response()->json([
-                'message' => 'غير مصرح لك'
+                // 'message' => 'غير مصرح لك'
+                'message' => __('api.not_authorized_to_handle_cancellation')
             ], 403);
         }
 
         if (empty($booking->cancellation_reason)) {
             return response()->json([
-                'message' => 'لا يوجد طلب إلغاء'
+                // 'message' => 'لا يوجد طلب إلغاء'
+                'message' => __('api.no_cancellation_request')
             ], 400);
         }
 
@@ -425,7 +482,8 @@ class BookingController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'تم رفض طلب الإلغاء',
+                // 'message' => 'تم رفض طلب الإلغاء',
+                'message' => __('api.cancellation_rejected'),
                 'booking' => $booking->fresh()
             ], 200);
         }
@@ -444,7 +502,8 @@ class BookingController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'تم إلغاء الحجز بنجاح',
+            // 'message' => 'تم إلغاء الحجز بنجاح',
+            'message' => __('api.cancellation_accepted'),
             'booking' => $booking->fresh()
         ], 200);
     }
@@ -458,11 +517,17 @@ class BookingController extends Controller
         $booking = Booking::findOrFail($bookingId);
 
         if (!FacadesAuth::check() || $booking->tenant_id !== FacadesAuth::id()) {
-            return response()->json(['message' => 'غير مصرح لك بهذا الإجراء'], 403);
+            return response()->json([
+                // 'message' => 'غير مصرح لك بهذا الإجراء'
+                'message' => __('api.not_authorized_to_modify')
+            ], 403);
         }
 
         if (!in_array($booking->status, ['owner_approved'])) {
-            return response()->json(['message' => 'لا يمكن تعديل حجز غير مؤكد'], 400);
+            return response()->json([
+                // 'message' => 'لا يمكن تعديل حجز غير مؤكد'
+                'message' => __('api.cannot_modify_unconfirmed')
+            ], 400);
         }
 
         $validated = $request->validate([
@@ -481,7 +546,10 @@ class BookingController extends Controller
             $dbCheckIn = $tempCheckIn->format('Y-m-d');
             $dbCheckOut = $tempCheckOut->format('Y-m-d');
         } catch (\Exception $e) {
-            return response()->json(['message' => 'صيغة التاريخ غير صالحة'], 422);
+            return response()->json([
+                // 'message' => 'صيغة التاريخ غير صالحة'
+                'message' => __('api.invalid_date_format')
+            ], 422);
         }
 
         // فحص التداخل الصحيح
@@ -501,7 +569,10 @@ class BookingController extends Controller
 
 
         if ($overlapValidator->fails()) {
-            return response()->json(['message' => 'التواريخ الجديدة متداخلة مع حجز آخر مؤكد'], 422);
+            return response()->json([
+                // 'message' => 'التواريخ الجديدة متداخلة مع حجز آخر مؤكد'
+                'message' => __('api.overlapping_dates')
+            ], 422);
         }
 
         $modificationText = "طلب تعديل الحجز:\n" .
@@ -516,7 +587,8 @@ class BookingController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'تم إرسال طلب تعديل الحجز بنجاح، بانتظار موافقة صاحب الشقة',
+            // 'message' => 'تم إرسال طلب تعديل الحجز بنجاح، بانتظار موافقة صاحب الشقة',
+            'message' => __('api.modification_request_sent'),
             'booking' => $booking->fresh()
         ], 200);
     }
@@ -531,12 +603,18 @@ class BookingController extends Controller
 
         // التأكد إن المستخدم هو المالك
         if ($booking->owner_id !== FacadesAuth::id()) {
-            return response()->json(['message' => 'غير مصرح لك'], 403);
+            return response()->json([
+                // 'message' => 'غير مصرح لك'
+                'message' => __('api.not_authorized_to_manage')
+            ], 403);
         }
 
         // التأكد إن في طلب تعديل
         if (is_null($booking->cancellation_reason) || !str_contains($booking->cancellation_reason, 'طلب تعديل')) {
-            return response()->json(['message' => 'لا يوجد طلب تعديل معلق'], 400);
+            return response()->json([
+                // 'message' => 'لا يوجد طلب تعديل معلق'
+                'message' => __('api.no_modification_request')
+            ], 400);
         }
 
         $request->validate([
@@ -551,7 +629,8 @@ class BookingController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'تم رفض طلب التعديل',
+                // 'message' => 'تم رفض طلب التعديل',
+                'message' => __('api.modification_rejected'),
                 'booking' => $booking->fresh()
             ], 200);
         }
@@ -561,7 +640,10 @@ class BookingController extends Controller
         preg_match('/تاريخ الخروج الجديد:\s*([^\n\r]+)/', $booking->cancellation_reason, $outMatches);
 
         if (empty($inMatches[1]) || empty($outMatches[1])) {
-            return response()->json(['message' => 'تعذر قراءة التواريخ من الطلب'], 400);
+            return response()->json([
+                // 'message' => 'تعذر قراءة التواريخ من الطلب'
+                'message' => __('api.failed_to_read_dates')
+            ], 400);
         }
 
         $rawCheckIn = trim($inMatches[1]);
@@ -579,7 +661,8 @@ class BookingController extends Controller
             $newCheckOut = $newCheckOut->format('Y-m-d');
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'خطأ في قراءة التواريخ الجديدة'
+                // 'message' => 'خطأ في قراءة التواريخ الجديدة'
+                'message' => __('api.invalid_date_format')
             ], 400);
         }
 
@@ -605,7 +688,9 @@ class BookingController extends Controller
             $difference = $newPrice - $booking->total_price;
             if ($tenant->balance < $difference) {
                 return response()->json([
-                    'message' => 'رصيد المستأجر غير كافٍ لتغطية زيادة السعر المطلوبة',
+                    // 'message' => 'رصيد المستأجر غير كافٍ لتغطية زيادة السعر المطلوبة',
+                    'message' => __('api.insufficient_tenant_balance'),
+
                     'required_additional' => $difference,
                     'current_balance' => $tenant->balance,
                 ], 400);
@@ -616,7 +701,8 @@ class BookingController extends Controller
             $difference = $booking->total_price - $newPrice;
             if ($owner->balance < $difference) {
                 return response()->json([
-                    'message' => 'رصيد المالك غير كافٍ لتغطية تخفيض السعر المطلوب',
+                    // 'message' => 'رصيد المالك غير كافٍ لتغطية تخفيض السعر المطلوب',
+                    'message' => __('api.insufficient_owner_balance'),
                     'required_deduction' => $difference,
                     'current_balance' => $owner->balance,
                 ], 400);
@@ -649,7 +735,8 @@ class BookingController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'تم قبول طلب التعديل وتطبيقه بنجاح',
+            // 'message' => 'تم قبول طلب التعديل وتطبيقه بنجاح',
+            'message' => __('api.modification_accepted'),
             'booking' => $booking->fresh()
         ], 200);
     }

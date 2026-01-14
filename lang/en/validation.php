@@ -214,6 +214,7 @@ return [
         'area_id'     => 'area',
         'city_id'     => 'city',
 
+        'booking_overlap' => 'The selected period overlaps with another booking',
 
 
     ],

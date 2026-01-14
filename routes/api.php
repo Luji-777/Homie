@@ -92,8 +92,8 @@ Route::put('/profile', [ProfileController::class, 'update'])->middleware('auth:s
 // اختبار الترجمة
 Route::get('/test-translation', function () {
     return response()->json([
-        'message_en' => __('api.test'),   // لازم يجيب الإنجليزي
-        'message_current' => __('api.test'),  // هيجيب حسب اللغة الحالية
+        'message_en' => __('api.test'),   
+        'message_current' => __('api.test'),  
         'current_locale' => app()->getLocale(),
     ]);
 });

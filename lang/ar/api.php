@@ -9,4 +9,19 @@ return [
   'invalid_login'           => 'بيانات تسجيل الدخول غير صحيحة',
   'login_success'           => 'تم تسجيل الدخول بنجاح',
   'logout_success'          => 'تم تسجيل الخروج بنجاح',
+
+  'apartment_created'    => 'تم إنشاء الشقة بنجاح، بانتظار موافقة الإدارة.',
+  'apartment_updated'    => 'تم تحديث الشقة بنجاح.',
+  'apartment_deleted'    => 'تم حذف الشقة بنجاح.',
+  'apartments_retrieved' => 'تم جلب الشقق بنجاح.',
+  'unauthorized'         => 'غير مصرح',
+
+  'type_room'   => 'غرفة',
+  'type_studio' => 'استوديو',
+  'type_house'  => 'منزل',
+  'type_villa'  => 'فيلا',
+
+  'rent_day'   => 'يومي',
+  'rent_month' => 'شهري',
+
 ];

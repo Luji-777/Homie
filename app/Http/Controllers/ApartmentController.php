@@ -61,7 +61,8 @@ class ApartmentController extends Controller
 
 
         return response()->json([
-            'message' => 'Apartment created successfuly. waiting for admin to approve.',
+            // 'message' => 'Apartment created successfuly. waiting for admin to approve.',
+            'message' => __('api.apartment_created'),
             'apartment' => $apartment
         ], 201);
     }
@@ -103,7 +104,11 @@ class ApartmentController extends Controller
         $apartment = Apartment::findOrFail($id);
 
         if ($apartment->owner_id !== $owner_id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json([
+                // 'message' => 'Unauthorized'
+                'message' => __('api.unauthorized')
+
+            ], 403);
         }
 
         // جلب البيانات المصادق عليها (للحقول النصية فقط)
@@ -146,7 +151,8 @@ class ApartmentController extends Controller
         $apartment->load(['area.city', 'apartment_image', 'isCover']);
 
         return response()->json([
-            'message'   => 'Apartment updated successfully.',
+            // 'message'   => 'Apartment updated successfully.',
+            'message'   => __('api.apartment_updated'),
             'apartment' => $apartment,
             'kk'        => $kk,
             'debug'     => [  // مؤقت للتصحيح
@@ -166,94 +172,20 @@ class ApartmentController extends Controller
         $apartments = Apartment::findorfail($id);
         if ($apartments->owner_id != $owner_id) {
             return response()->json([
-                'message' => 'Unauthorize'
+                // 'message' => 'Unauthorize'
+                'message' => __('api.unauthorized')
             ], 403);
         }
         $apartments->delete();
 
         return response()->json([
-            'message' => 'the apartment deleted successfuly.'
+            // 'message' => 'the apartment deleted successfuly.'
+            'message' => __('api.apartment_deleted')
         ], 200);
     }
 
 
 
-    // public function filter(ApartmentFilterRequest $request)
-    // {
-
-    //     $query = Apartment::query()
-    //         ->where('is_approved', true) // فقط الشقق المعتمدة يعني لازم نحطها ترووو بس مشان التجريب حاليا
-    //         ->with(['area.city']); // لإرجاع اسم المنطقة والمحافظة مع الشقة
-
-
-    //         // إدخال أكثر من نوع
-    //     if ($request->filled('type')) {
-    //         $query->where('type', $request->type);
-    //     }
-
-    //     // فلتر حسب نوع الإيجار (rent_type)
-    //     if ($request->filled('rent_type')) {
-    //         if ($request->rent_type === 'day') {
-    //             // فلتر حسب السعر اليومي
-    //             if ($request->filled('price_min')) {
-    //                 $query->where('price_per_day', '>=', $request->price_min);
-    //             }
-    //             if ($request->filled('price_max')) {
-    //                 $query->where('price_per_day', '<=', $request->price_max);
-    //             }
-    //         } elseif ($request->rent_type === 'month') {
-    //             // فلتر حسب السعر الشهري
-    //             if ($request->filled('price_min')) {
-    //                 $query->where('price_per_month', '>=', $request->price_min);
-    //             }
-    //             if ($request->filled('price_max')) {
-    //                 $query->where('price_per_month', '<=', $request->price_max);
-    //             }
-    //         }
-    //     }
-
-
-    //     // فلتر حسب المحافظة (city_id)
-    //     if ($request->filled('city_id')) {
-    //         $query->whereHas('area', function ($q) use ($request) {
-    //             $q->where('city_id', $request->city_id);
-    //         });
-    //     }
-
-    //     // فلتر حسب المنطقة (area_id)
-    //     if ($request->filled('area_id')) {
-    //         $query->where('area_id', $request->area_id);
-    //     }
-
-
-
-    //     // فلتر حسب عدد الغرف
-    //     if ($request->filled('rooms')) {
-    //         $query->where('rooms', $request->rooms);
-    //     }
-
-    //     // فلتر حسب وجود WiFi
-    //     if ($request->filled('wifi')) {
-    //         $Wifi = filter_var($request->wifi, FILTER_VALIDATE_BOOLEAN);
-    //         $query->where('wifi', $Wifi);
-    //     }
-
-    //     // فلتر حسب وجود سولار
-    //     if ($request->filled('solar')) {
-    //         $Solar = filter_var($request->solar, FILTER_VALIDATE_BOOLEAN);
-    //         $query->where('solar', $Solar);
-    //     }
-
-
-
-    //     // ترتيب حسب الأحدث أولاً (اختياري)
-    //     $apartments = $query->latest()->paginate(12); // 12 شقة في الصفحة، غيّر الرقم كيف ما بدك
-    //     return response()->json([
-    //         'message' => 'Apartments retrieved successfully.',
-    //         'data' => $apartments->map(fn ($apt) => ApartmentController::format($apt)),
-    //         'filters' => $request->only(['type', 'rent_type', 'city_id', 'area_id', 'price_min', 'price_max', 'rooms', 'wifi'])
-    //     ], 200);
-    // }
 
     public function filter(ApartmentFilterRequest $request)
     {
@@ -331,7 +263,8 @@ class ApartmentController extends Controller
         $apartments = $query->latest()->paginate(12);
 
         return response()->json([
-            'message' => 'Apartments retrieved successfully.',
+            // 'message' => 'Apartments retrieved successfully.',
+            'message' => __('api.apartments_retrieved'),
             'data' => $apartments->map(fn($apt) => ApartmentController::format($apt)),
             'filters' => $request->only([
                 'type',
@@ -354,17 +287,6 @@ class ApartmentController extends Controller
     }
 
 
-    // public function approvedApartments()
-    // {
-    //     $apartments = Apartment::where('is_approved', true)
-    //         ->with(['area.city', 'isCover'])
-    //         ->get();
-
-    //     return response()->json([
-    //         'message' => 'Approved apartments retrieved successfully.',
-    //         'data' => $apartments->map(fn($apt) => ApartmentController::format($apt))
-    //     ], 200);
-    // }
 
     public function approvedApartments()
     {
@@ -387,9 +309,17 @@ class ApartmentController extends Controller
                     'bedrooms'       => $apartment->bedrooms,
                     'bathrooms'      => $apartment->bathrooms,
                     'rooms'          => $apartment->rooms ?? null,
-                    'address'        => $apartment->area->city->name . '، ' . $apartment->area->name,
-                    'rental_type'    => $apartment->rent_type,
-                    'apartment_type' => $apartment->type,
+                    // 'address'        => $apartment->area->city->name . '، ' . $apartment->area->name,
+                    'address' => __('cities.' . ($apartment->area->city->name ?? ''))
+                        . '، ' .
+                        __('areas.' . ($apartment->area->name ?? '')),
+
+
+                    // 'rental_type'    => $apartment->rent_type,
+                    'rental_type' => __('api.rent_' . $apartment->rent_type),
+                    
+                    // 'apartment_type' => $apartment->type,
+                    'apartment_type' => __('api.type_' . $apartment->type),
                     'average_rating'         => round($averageRating, 1),
                     'isFavorite' => FavoriteController::isFavorite($apartment->id),
 
@@ -405,7 +335,8 @@ class ApartmentController extends Controller
         });
 
         return response()->json([
-            'message' => 'Approved apartments retrieved successfully.',
+            // 'message' => 'Approved apartments retrieved successfully.',
+            'message' => __('api.apartments_retrieved'),
             'data'    => $formatted
         ], 200);
     }
@@ -474,11 +405,14 @@ class ApartmentController extends Controller
 
         return [
             'id' => $apartment->id,
-            'type' => ucfirst($apartment->type),
+            // 'type' => ucfirst($apartment->type),
+            'type' => __('api.type_' . $apartment->type),
+
             'title' => $apartment->title,
             'discription' => $apartment->discription,
             'rent_price' => $apartment->price,
-            'rent_type' => $apartment->rent_type,
+            // 'rent_type' => $apartment->rent_type,
+            'rent_type' => __('api.rent_' . $apartment->rent_type),
 
             'images' => $apartment->apartment_image->map(
                 fn($img) =>
@@ -486,8 +420,10 @@ class ApartmentController extends Controller
             )->toArray(),
 
             'address' => [
-                'city_name' => $apartment->area->city->name ?? null,
-                'area_name' => $apartment->area->name ?? null,
+                // 'city_name' => $apartment->area->city->name ?? null,
+                // 'area_name' => $apartment->area->name ?? null,
+                'city_name' => __('cities.' . ($apartment->area->city->name ?? '')),
+                'area_name' => __('areas.' . ($apartment->area->name ?? '')),
                 'detailed_address' => $apartment->address,
             ],
 

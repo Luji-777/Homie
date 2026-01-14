@@ -196,7 +196,25 @@ return [
         'personal_photo' => 'personal photo',
         'id_photo'       => 'ID photo',
         'otp'            => 'OTP code',
+
+
+        'title'       => 'apartment title',
+        'discription' => 'apartment description',
+        'type'        => 'apartment type',
+        'rent_type'   => 'rental type',
+        'price'       => 'price',
+        'space'       => 'space',
+        'bedrooms'    => 'bedrooms',
+        'bathrooms'   => 'bathrooms',
+        'floor'       => 'floor',
+        'wifi'        => 'wifi',
+        'solar'       => 'solar',
+        'images'      => 'images',
+        'cover_index' => 'cover image',
+        'area_id'     => 'area',
+        'city_id'     => 'city',
+
+
+
     ],
 ];
-
-

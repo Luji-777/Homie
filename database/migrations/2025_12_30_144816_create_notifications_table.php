@@ -19,8 +19,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); //id reciver (tenant or owner)
             $table->string('title');
             $table->text('body');
-            $table->string('type');
-            $table->unsignedBigInteger('related_id')->nullable();
+           // $table->string('type');
+            //$table->unsignedBigInteger('related_id')->nullable();
             $table->boolean('is_read')->default(false)->nullable();
             $table->timestamp('read_at')->nullable();
 

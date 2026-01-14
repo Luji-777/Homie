@@ -47,7 +47,7 @@ class Booking extends Model
     {
         return $this->hasOne(Review::class);
     }
-    
+
     // Scopes مفيدة للاستعلامات المتكررة
     public function scopePending($query)
     {

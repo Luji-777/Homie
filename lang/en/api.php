@@ -89,4 +89,22 @@ return [
   'modification_rejected' => 'Modification request rejected',
   'modification_accepted' => 'Modification request accepted',
 
+
+
+  'invalid_booking_apartment' => 'The booking does not match the requested apartment',
+  'review_not_allowed' => 'You cannot review a booking before it is completed',
+  'review_already_exists' => 'You have already reviewed this apartment',
+  'review_created_success' => 'Review created successfully',
+  'cannot_delete_review_unauthorized' => 'You cannot delete a review that does not belong to you',
+  'review_deleted_success' => 'Review deleted successfully',
+
+
+  'apartment_already_favorite' => 'Apartment is already in favorites',
+  'apartment_added_to_favorites_successfully' => 'Apartment added to favorites successfully',
+  'apartment_non_favorite' => 'Apartment is not in favorites',
+  'apartment_removed_from_favorites_successfully' => 'Apartment removed from favorites successfully',
+
+
+
+  'profile_updated_successfully' => 'Profile updated successfully',
   ];

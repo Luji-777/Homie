@@ -262,10 +262,63 @@ class ApartmentController extends Controller
 
         $apartments = $query->latest()->paginate(12);
 
+
+
+        $formatted = $apartments->map(function ($apartment) {
+            $user = FacadesAuth::user();
+            return [
+                'apartment' => [
+                    'id' => $apartment->id,
+                    // 'type' => ucfirst($apartment->type),
+                    'type' => __('api.type_' . $apartment->type),
+
+                    'title' => $apartment->title,
+                    'discription' => $apartment->discription,
+                    'rent_price' => $apartment->price,
+                    // 'rent_type' => $apartment->rent_type,
+                    'rent_type' => __('api.rent_' . $apartment->rent_type),
+
+                    'images' => $apartment->apartment_image->map(
+                        fn($img) =>
+                        asset('storage/' . $img->image_path)
+                    )->toArray(),
+
+                    'address' => [
+                        // 'city_name' => $apartment->area->city->name ?? null,
+                        // 'area_name' => $apartment->area->name ?? null,
+                        'city_name' => __('cities.' . ($apartment->area->city->name ?? '')),
+                        'area_name' => __('areas.' . ($apartment->area->name ?? '')),
+                        'detailed_address' => $apartment->address,
+                    ],
+
+                    'amenities' => [
+                        'bedrooms'   => $apartment->bedrooms,
+                        'bathrooms'  => $apartment->bathrooms,
+                        'space'      => (float) $apartment->space,
+                        'floor'      => $apartment->floor,
+                        'has_wifi'   => (bool) $apartment->wifi,
+                        'has_solar'  => (bool) $apartment->solar,
+                    ],
+                ],
+                'owner' => [
+                    'id' => $apartment->owner->id,
+                    'full_name' => ($apartment->owner->profile->first_name ?? '') . ' ' .
+                        ($apartment->owner->profile->last_name ?? ''),
+                    'phone_number' => $apartment->owner->phone_number ?? null,
+                    'profile_image' => $apartment->owner->profile->profile_photo ?? null,
+                ],
+
+                'reviews' => ReviewController::formatForApartment($apartment->id),
+                'isFavorite' => FavoriteController::isFavorite($apartment->id),
+                'isOwner' => $user ? $apartment->owner_id === $user->id : false,
+            ];
+        });
+
+
         return response()->json([
             // 'message' => 'Apartments retrieved successfully.',
             'message' => __('api.apartments_retrieved'),
-            'data' => $apartments->map(fn($apt) => ApartmentController::format($apt)),
+            'data' => $formatted,
             'filters' => $request->only([
                 'type',
                 'rent_type',
@@ -317,7 +370,7 @@ class ApartmentController extends Controller
 
                     // 'rental_type'    => $apartment->rent_type,
                     'rental_type' => __('api.rent_' . $apartment->rent_type),
-                    
+
                     // 'apartment_type' => $apartment->type,
                     'apartment_type' => __('api.type_' . $apartment->type),
                     'average_rating'         => round($averageRating, 1),

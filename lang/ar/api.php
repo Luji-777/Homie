@@ -90,4 +90,23 @@ return [
   'cancellation_accepted' => 'تم قبول طلب الإلغاء',
   'modification_rejected' => 'تم رفض طلب التعديل',
   'modification_accepted' => 'تم قبول طلب التعديل',
+
+
+
+
+  'invalid_booking_apartment' => 'الحجز لا يتطابق مع الشقة المطلوبة',
+  'review_not_allowed' => 'لا يمكن تقييم الحجز إلا بعد انتهائه',
+  'review_already_exists' => 'لقد قيّمت هذه الشقة مسبقًا',
+  'review_created_success' => 'تم تسجيل التقييم بنجاح',
+  'cannot_delete_review_unauthorized' => 'لا يمكنك حذف تقييم لا يخصك',
+  'review_deleted_success' => 'تم حذف التقييم بنجاح',
+
+
+  'apartment_already_favorite' => 'الشقة مضافة بالفعل للمفضلة',
+  'apartment_added_to_favorites_successfully' => 'تمت إضافة الشقة إلى المفضلة بنجاح',
+  'apartment_non_favorite' => 'الشقة غير موجودة في المفضلة',
+  'apartment_removed_from_favorites_successfully' => 'تمت إزالة الشقة من المفضلة بنجاح',
+
+
+  'profile_updated_successfully' => 'تم تحديث الملف الشخصي بنجاح',
 ];

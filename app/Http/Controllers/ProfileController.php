@@ -31,8 +31,10 @@ class ProfileController extends Controller
                 'personal_photo' => $profile->personal_photo ?: null,
                 'profile_photo'  => $profile->profile_photo ?: null,
                 'id_photo'       => $profile->id_photo,
-                'city_id'        => $profile->city_id,
-                'area_id'        => $profile->area_id,
+                'city_id'        => __('cities.' . ($profile->city->name ?? '')),
+                'area_id'        => __('areas.' . ($profile->area->name ?? '')),
+                // 'city_id'        => $profile->city_id,
+                // 'area_id'        => $profile->area_id,
             ]
 
         ]);
@@ -185,7 +187,8 @@ class ProfileController extends Controller
         $profile->refresh();
 
         return response()->json([
-            'message' => 'Profile updated successfully',
+            // 'message' => 'Profile updated successfully',
+            'message' => __('api.profile_updated_successfully'),
             'user' => [
                 'id'           => $user->id,
                 'phone_number' => $user->phone_number,
@@ -195,8 +198,10 @@ class ProfileController extends Controller
                 'first_name'     => $profile->first_name,
                 'last_name'      => $profile->last_name,
                 'birth_date'     => $profile->birth_date,
-                'city_id'        => $profile->city_id,
-                'area_id'        => $profile->area_id,
+                'city_id'        => __('cities.' . ($profile->city->name ?? '')),
+                'area_id'        => __('areas.' . ($profile->area->name ?? '')),
+                // 'city_id'        => $profile->city_id,
+                // 'area_id'        => $profile->area_id,
                 'profile_photo'  => $profile->profile_photo ? asset('storage/' . $profile->profile_photo) : null,
                 'personal_photo' => $profile->personal_photo ? asset('storage/' . $profile->personal_photo) : null,
                 'id_photo'       => $profile->id_photo ? asset('storage/' . $profile->id_photo) : null,

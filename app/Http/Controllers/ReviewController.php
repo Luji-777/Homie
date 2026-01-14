@@ -33,7 +33,8 @@ class ReviewController extends Controller
         if ($booking->tenant_id !== $user->id) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'لا يمكنك تقييم حجز لا يخصك'
+                // 'message' => 'لا يمكنك تقييم حجز لا يخصك'
+                'message' => __('api.unauthorized_action')
             ], 403);
         }
 
@@ -41,7 +42,8 @@ class ReviewController extends Controller
         if ($booking->apartment_id != $validated['apartment_id']) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'الحجز لا يتطابق مع الشقة المطلوبة'
+                // 'message' => 'الحجز لا يتطابق مع الشقة المطلوبة'
+                'message' => __('api.invalid_booking_apartment')
             ], 400);
         }
 
@@ -50,7 +52,8 @@ class ReviewController extends Controller
         if ($booking->status !== 'completed') {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'لا يمكن تقييم الحجز إلا بعد انتهائه'
+                // 'message' => 'لا يمكن تقييم الحجز إلا بعد انتهائه'
+                'message' => __('api.review_not_allowed')
             ], 400);
         }
 
@@ -62,7 +65,8 @@ class ReviewController extends Controller
         if ($existingReview) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'لقد قيّمت هذه الشقة مسبقًا'
+                // 'message' => 'لقد قيّمت هذه الشقة مسبقًا'
+                'message' => __('api.review_already_exists')
             ], 400);
         }
 
@@ -78,7 +82,8 @@ class ReviewController extends Controller
         // 6. رد ناجح
         return response()->json([
             'status'  => 'success',
-            'message' => 'تم إضافة التقييم بنجاح',
+            // 'message' => 'تم إضافة التقييم بنجاح',
+            'message' => __('api.review_created_success'),
             'data'    => [
                 'review' => [
                     'id'           => $review->id,
@@ -112,7 +117,8 @@ class ReviewController extends Controller
         if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'يجب تسجيل الدخول أولاً'
+                // 'message' => 'يجب تسجيل الدخول أولاً'
+                'message' => __('api.unauthorized_action')
             ], 401);
         }
 
@@ -122,7 +128,8 @@ class ReviewController extends Controller
         if ($review->tenant_id !== $user->id) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'لا يمكنك حذف تقييم لا يخصك'
+                // 'message' => 'لا يمكنك حذف تقييم لا يخصك'
+                'message' => __('api.cannot_delete_review_unauthorized')
             ], 403);
         }
 
@@ -130,7 +137,8 @@ class ReviewController extends Controller
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'تم حذف التقييم بنجاح'
+            // 'message' => 'تم حذف التقييم بنجاح'
+            'message' => __('api.review_deleted_success')
         ]);
     }
 

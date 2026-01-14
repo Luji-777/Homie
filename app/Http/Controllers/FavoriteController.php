@@ -73,7 +73,8 @@ class FavoriteController extends Controller
         if ($user->favoriteApartments()->where('apartments.id', $validated['apartment_id'])->exists()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'الشقة مضافة بالفعل للمفضلة'
+                // 'message' => 'الشقة مضافة بالفعل للمفضلة'
+                'message' => __('api.apartment_already_favorite')
             ], 400);
         }
 
@@ -81,7 +82,8 @@ class FavoriteController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'تمت إضافة الشقة إلى المفضلة بنجاح'
+            // 'message' => 'تمت إضافة الشقة إلى المفضلة بنجاح'
+            'message' => __('api.apartment_added_to_favorites_successfully')
         ]);
     }
 
@@ -98,7 +100,8 @@ class FavoriteController extends Controller
         if (! $user->favoriteApartments()->where('apartments.id', $validated['apartment_id'])->exists()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'الشقة غير موجودة في المفضلة'
+                // 'message' => 'الشقة غير موجودة في المفضلة'
+                'message' => __('api.apartment_non_favorite')
             ], 400);
         }
 
@@ -106,7 +109,8 @@ class FavoriteController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'تمت إزالة الشقة من المفضلة بنجاح'
+            // 'message' => 'تمت إزالة الشقة من المفضلة بنجاح'
+            'message' => __('api.apartment_removed_from_favorites_successfully')
         ]);
     }
 

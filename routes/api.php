@@ -54,9 +54,9 @@ Route::get('/areas', [CityController::class, 'areas']);
 Route::post('/apartments/{apartment}/book', [BookingController::class, 'store'])->middleware('auth:sanctum');
 Route::get('/apartments/{id}/booked-dates', [BookingController::class, 'getBookedDates']);
 Route::post('/bookings/{bookingId}/owner-response', [BookingController::class, 'handleOwnerResponse'])
-    ->middleware('auth:sanctum') 
+    ->middleware('auth:sanctum')
     ->name('bookings.owner-response');
-Route::get('/myBookings', [BookingController::class, 'myBookings'])->middleware('auth:sanctum'); 
+Route::get('/myBookings', [BookingController::class, 'myBookings'])->middleware('auth:sanctum');
 
 
 // طلب إلغاء من المستأجر
@@ -82,9 +82,18 @@ Route::post('/bookings/{bookingId}/modification-response', [BookingController::c
 
 
 
-    // عرض البروفايل
-    Route::get('/profile', [ProfileController::class, 'show']) ->middleware('auth:sanctum') ;
+// عرض البروفايل
+Route::get('/profile', [ProfileController::class, 'show'])->middleware('auth:sanctum');
 
-    // تعديل البروفايل
-    Route::put('/profile', [ProfileController::class, 'update']) ->middleware('auth:sanctum') ;
+// تعديل البروفايل
+Route::put('/profile', [ProfileController::class, 'update'])->middleware('auth:sanctum');
 
+
+// اختبار الترجمة
+Route::get('/test-translation', function () {
+    return response()->json([
+        'message_en' => __('api.test'),   // لازم يجيب الإنجليزي
+        'message_current' => __('api.test'),  // هيجيب حسب اللغة الحالية
+        'current_locale' => app()->getLocale(),
+    ]);
+});

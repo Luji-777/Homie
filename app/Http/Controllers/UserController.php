@@ -83,9 +83,18 @@ class UserController extends Controller
         // إنشاء توكن للمستخدم
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        // إعادة استجابة بنجاح التسجيل
+        // // إعادة استجابة بنجاح التسجيل
+        // return response()->json([
+        //     'message' => 'the account created successfully, Please verify your phone number.',
+        //     'otp'     => $otp,
+        //     'phone_number'   => $request->phone_number,
+        //     'next_step' => 'verify-otp',
+        //     'access_token' => $token,
+        //     'token_type' => 'Bearer',
+        // ]);
+
         return response()->json([
-            'message' => 'the account created successfully, Please verify your phone number.',
+            'message' => __('api.account_created_success'),
             'otp'     => $otp,
             'phone_number'   => $request->phone_number,
             'next_step' => 'verify-otp',
@@ -107,7 +116,11 @@ class UserController extends Controller
 
         $user = User::where('phone_number', $request->phone_number)->firstOrFail();
         if ($user->otp_code !== $request->otp || Carbon::now()->gt($user->otp_expires_at)) {
-            return response()->json(['message' => 'the code isnot true', 'otp' => $user->otp_code], 422);
+            return response()->json([
+                // 'message' => 'the code isnot true', 
+                'message' => __('api.invalid_otp'),
+                'otp' => $user->otp_code
+                ], 422);
         }
 
         // إذا كان الحساب لسا ما تمت الموافقة عليه من المدير
@@ -116,7 +129,8 @@ class UserController extends Controller
             $user->otp_expires_at = null;
             $user->save();
             return response()->json([
-                'message' => 'waiting the admin to approve the account.',
+                // 'message' => 'waiting the admin to approve the account.',
+                'message' => __('api.pending_admin_approval'),
                 'status'  => 'pending_approval'
             ]);
         }
@@ -139,7 +153,8 @@ class UserController extends Controller
         $user->save();
 
         return response()->json([
-            'message' => 'OTP resent successfully.',
+            // 'message' => 'OTP resent successfully.',
+            'message' => __('api.otp_resent_success'),
             'otp'     => $otp
         ]);
     }
@@ -183,7 +198,8 @@ class UserController extends Controller
 
         if (!Auth::attempt($request->only('phone_number', 'password'))) {
             return response()->json([
-                'message' => 'Invalid login details'
+                // 'message' => 'Invalid login details'
+                'message' => __('api.invalid_login')
             ], 401);
         }
 
@@ -196,7 +212,8 @@ class UserController extends Controller
         $city_id = $user->profile?->city_id;
 
         return response()->json([
-            'message'      => 'Login successful',
+            // 'message'      => 'Login successful',
+            'message' => __('api.login_success'),
             'user'         => [
                 'id'            => $user->id,
                 'phone_number'  => $user->phone_number,
@@ -226,7 +243,8 @@ class UserController extends Controller
         // حذف التوكن الحالي
         $request->user()->currentAccessToken()->delete();
         return response()->json([
-            'message' => 'Logout successful'
+            // 'message' => 'Logout successful'
+            'message' => __('api.logout_success')
         ], 204);
     }
 }

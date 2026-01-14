@@ -193,6 +193,11 @@ class UserController extends Controller
     // }
     public function login(Request $request)
     {
+       $user = User::where('phone_number', $request->phone_number)->first();
+        if(!$user->is_verified){
+            return response()->json('Your account is currently under review by the administrator. Please wait for approval before you can log in ');
+        }
+
         $request->validate([
             'phone_number' => 'required|digits_between:9,15',
             'password'     => 'required|string|min:6|max:255'
@@ -203,8 +208,6 @@ class UserController extends Controller
                 'message' => 'Invalid login details'
             ], 401);
         }
-
-        $user = User::where('phone_number', $request->phone_number)->first();
 
         // إنشاء التوكن
         $token = $user->createToken('auth_token')->plainTextToken;

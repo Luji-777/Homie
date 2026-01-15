@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Observers;
- use App\Services\NotificationService;
+
+use App\Services\NotificationService;
 use App\Models\Booking;
 
 class BookingObserver
@@ -10,67 +11,94 @@ class BookingObserver
     public function created(Booking $booking): void
     {
 
-    $owner = $booking->apartment->owner;
+        $owner = $booking->apartment->owner;
 
-    app(NotificationService::class)->send(
-        user: $owner,
-        title: 'New booking waiting your replay',
-        body: "tenant {$booking->tenant->profile->first_name} booking your apartment {$booking->apartment->title} from{$booking->check_in} to {$booking->check_out}"
+        app(NotificationService::class)->send(
+            reciver: $owner,
+            sender: $booking->tenant,
+            booking: $booking,
+            title: 'New booking waiting your replay',
+            body: "Has requested to book your apartment",
 
-    );
-
+        );
     }
 
 
     public function updated(Booking $booking): void
-{
-    // إشعارات رح تنبعت للمستأجر وقت تتغير حالة الحجز
-    if ($booking->isDirty('request_status')) {
-        $tenant = $booking->tenant;
-        $owner = $booking->owner;
+    {
+        // إشعارات رح تنبعت للمستأجر وقت تتغير حالة الحجز
+        if ($booking->isDirty('request_status')) {
+            $tenant = $booking->tenant;
+            $owner = $booking->owner;
+        
 
-        $request_status = match ($booking->request_status) {
-            'pending_owner'  => 'Pending Owner Approval',
-            'owner_accepted' => 'Booking Approved',
-            'owner_rejected' => 'Booking Rejected',
+            $request_status = match ($booking->request_status) {
 
-            'owner_cancel_accepted'=> 'Booking Cancelled',
-            'owner_cancel_rejected' => 'The cancellation request was rejected',
-            'tenant_cancel_request' => 'Pending owner approval to cancel the booking',
+                // Tenant Requests (To Owner)
+                // 'rent_request'          => 'Has requested to book your apartment',
+                'modification_request'  => 'Has requested to modify the booking',
+                'cancellation_request'  => 'Has requested to cancel the booking',
+
+                // Owner Responses - Rejections (To Tenant)
+                'rent_rejected'         => 'The owner has rejected your booking request',
+                'modification_rejected' => 'The owner has rejected your modification request',
+                'cancellation_rejected' => 'The owner has rejected your cancellation request',
+
+                // Owner Responses - Approvals (To Tenant)
+                'rent_approved'         => 'The owner has approved your booking request',
+                'modification_approved' => 'The owner has approved your modification request',
+                'cancellation_approved' => 'The owner has approved your cancellation request',
 
 
-            'tenant_modify_request'=>'Pending owner approval to modify the booking',
-            'owner_modify_accepted'=>   'Booking modified',
-            'owner_modify_rejected'=>   'The modification request was rejected',
-            'completed'      => 'Booking Completed',
-            default          => 'Booking status updated',
-        };
+                // 'pending_owner'  => 'Pending Owner Approval',
+                // 'owner_accepted' => 'Booking Approved',
+                // 'owner_rejected' => 'Booking Rejected',
 
-        app(NotificationService::class)->send(
-            user: $tenant,
-            title: 'Booking Status Update',
-            body: "Apartment: {$booking->apartment->title}\nNew request_status: {$request_status}"
-        );
+                // 'owner_cancel_accepted' => 'Booking Cancelled',
+                // 'owner_cancel_rejected' => 'The cancellation request was rejected',
+                // 'tenant_cancel_request' => 'Pending owner approval to cancel the booking',
 
-        // طلب إلغاء
-        if ($booking->request_status === 'tenant_cancel_request') {
+
+                // 'tenant_modify_request' => 'Pending owner approval to modify the booking',
+                // 'owner_modify_accepted' =>   'Booking modified',
+                // 'owner_modify_rejected' =>   'The modification request was rejected',
+                // 'completed'      => 'Booking Completed',
+                // default          => 'Booking status updated',
+            };
+
             app(NotificationService::class)->send(
-                user: $owner,
-                title: 'Booking Cancellation Request',
-                body: "Tenant {$tenant->profile->first_name} has requested to cancel the booking for apartment {$booking->apartment->title}.\nPlease approve or reject the cancellation request.",
+                reciver: $tenant,
+                sender: $owner,
+                booking: $booking,
+                title: 'Booking Status Update',
+                body: $request_status
             );
-        }
 
-        // طلب تعديل
-        if ($booking->request_status === 'tenant_modify_request') {
-            app(NotificationService::class)->send(
-                user: $owner,
-                title: 'Booking Modification Request',
-                body: "Tenant {$tenant->profile->first_name} has requested changes to the booking for apartment {$booking->apartment->title}.\nPlease review and approve or reject the modifications.",
-            );
+            // طلب إلغاء
+            if ($booking->request_status === 'cancellation_request') {
+                app(NotificationService::class)->send(
+                    reciver: $owner,
+                    sender: $tenant,
+                    booking: $booking,
+                    title: 'Booking Cancellation Request',
+                    body: $request_status,
+                );
+            }
+
+
+
+            // طلب تعديل
+            if ($booking->request_status === 'modification_request') {
+                app(NotificationService::class)->send(
+                    reciver: $owner,
+                    sender: $tenant,
+                    booking: $booking,
+                    title: 'Booking Modification Request',
+                    body: $request_status,
+                );
+            }
         }
     }
-}
 
 
     /**

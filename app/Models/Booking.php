@@ -63,4 +63,9 @@ class Booking extends Model
     {
         return $query->where('status', 'cancelled');
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(Booking::class, 'booking_id');
+    }
 }

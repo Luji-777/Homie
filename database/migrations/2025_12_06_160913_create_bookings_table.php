@@ -53,18 +53,21 @@ return new class extends Migration
             ])->default('pending');
 
             $table->enum('request_status', [
-                'new',
-                'pending_owner',
-                'owner_accepted',
-                'owner_rejected',
-                'tenant_cancel_request',
-                'owner_cancel_accepted',
-                'owner_cancel_rejected',
-                'tenant_modify_request',
-                'owner_modify_accepted',
-                'owner_modify_rejected',
+                
+                'rent_request',
+                'rent_rejected',
+                'rent_approved',
+
+                'cancellation_request',
+                'cancellation_approved',
+                'cancellation_rejected',
+
+                'modification_request',
+                'modification_approved',
+                'modification_rejected',
+
                 'completed',
-            ])->default('new');
+            ])->default('rent_request');
             
             $table->text('cancellation_reason')->nullable();
             $table->timestamp('cancelled_at')->nullable();

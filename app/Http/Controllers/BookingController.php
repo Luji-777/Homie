@@ -172,7 +172,7 @@ class BookingController extends Controller
             'check_out'      => $validated['check_out'],
             'total_price'    => $totalPrice,
             'status'         => 'pending',
-            'request_status' => 'pending_owner',
+            'request_status' => 'rent_request',
             // 'owner_approval' => false,
             'cancellation_reason' => null,
         ]);
@@ -224,7 +224,7 @@ class BookingController extends Controller
             $owner->save();
             $booking->update([
                 'status' => 'owner_approved',
-                'request_status' => 'owner_accepted',
+                'request_status' => 'rent_approved',
 
                 // 'owner_approval' => true,
             ]);
@@ -241,7 +241,7 @@ class BookingController extends Controller
             $tenant->save();
             $booking->update([
                 'status' => 'owner_rejected',
-                'request_status' => 'owner_rejected',
+                'request_status' => 'rent_rejected',
 
                 // 'owner_approval' => false,
             ]);
@@ -271,9 +271,9 @@ class BookingController extends Controller
         if ($type === 'completed') {
             $query->where('status', 'completed');
         } elseif ($type === 'cancelled') {
-            $query->where('status', 'cancelled');
+            $query->where('status', ['cancelled', 'owner_rejected']);
         } elseif ($type === 'current') {
-            $query->whereIn('status', ['pending', 'owner_approved', 'owner_rejected']);
+            $query->whereIn('status', ['pending', 'owner_approved']);
         }
         // if !type => return all booking
 
@@ -293,6 +293,7 @@ class BookingController extends Controller
             // };
 
             return [
+                'booking_id'          => $booking->id,
                 'id'          => $apartment->id,
                 // 'type'        => ucfirst($apartment->type ?? 'غير محدد'),
                 'type'  => __('api.type_' . $apartment->type),
@@ -437,7 +438,7 @@ class BookingController extends Controller
 
         $booking->update([
             'cancellation_reason' => $request->reason,
-            'request_status' => 'tenant_cancel_request',
+            'request_status' => 'cancellation_request',
 
         ]);
 
@@ -477,7 +478,7 @@ class BookingController extends Controller
         if ($request->action === 'reject') {
             $booking->update([
                 'cancellation_reason' => null,
-                'request_status' => 'owner_cancel_rejected',
+                'request_status' => 'cancellation_rejected',
 
             ]);
 
@@ -496,7 +497,7 @@ class BookingController extends Controller
         $owner->save();
         $booking->update([
             'status' => 'cancelled',
-            'request_status' => 'owner_cancel_accepted',
+            'request_status' => 'cancellation_approved',
 
             // 'owner_approval' => false, // اختياري
         ]);
@@ -582,7 +583,7 @@ class BookingController extends Controller
 
         $booking->update([
             'cancellation_reason' => $modificationText,
-            'request_status' => 'tenant_modify_request',
+            'request_status' => 'modification_request',
 
         ]);
 
@@ -624,7 +625,7 @@ class BookingController extends Controller
         if ($request->action === 'reject') {
             $booking->update([
                 'cancellation_reason' => null,
-                'request_status' => 'owner_modify_rejected',
+                'request_status' => 'modification_rejected',
 
             ]);
 
@@ -730,7 +731,7 @@ class BookingController extends Controller
             'check_out' => $newCheckOut,
             'total_price' => $newPrice,
             'cancellation_reason' => null,
-            'request_status' => 'owner_modify_accepted',
+            'request_status' => 'modification_approved',
 
         ]);
 

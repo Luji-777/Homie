@@ -123,10 +123,10 @@ class BookingSeeder extends Seeder
 
             // request_status حسب الحالة
             $requestStatus = match ($status) {
-                'pending'         => 'pending_owner',
-                'owner_approved'  => 'owner_accepted',
-                'owner_rejected'  => 'owner_rejected',
-                'cancelled'       => 'owner_cancel_accepted',
+                'pending'         => 'rent_request',
+                'owner_approved'  => 'rent_approved',
+                'owner_rejected'  => 'rent_rejected',
+                'cancelled'       => 'cancellation_approved',
                 'completed'       => 'completed',
             };
 

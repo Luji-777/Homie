@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Booking;
 use App\Models\Notification;
 use App\Models\User;
 use Kreait\Firebase\Messaging\CloudMessage;
@@ -10,17 +11,20 @@ use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
-    public function send(User $user, string $title,string $body)
+    public function send(Booking $booking, User $reciver,User $sender, string $title,string $body)
     {
         // 1. خزن الإشعار في الداتا بيز أولاً
         $notification = Notification::create([
-            'user_id'    => $user->id, //المستلم
+            'reciver_id'    => $reciver->id, //المستلم
+            'sender_id'  => $sender->id, //المرسل
+            'booking_id' => $booking->id,
             'title'   => $title,
             'body'    => $body,
+            
         ]);
 
         // 2. إرسال push عبر FCM إذا كان عنده token
-        if ($user->fcm_token) {
+        if ($reciver->fcm_token) {
             try {
                 $messaging = Firebase::messaging();
 
@@ -33,7 +37,7 @@ class NotificationService
                         'notification_id' => (string) $notification->id,
                     ]);
 
-                $messaging->sendMulticast($message, [$user->fcm_token]);
+                $messaging->sendMulticast($message, [$reciver->fcm_token]);
             } catch (\Exception $e) {
                 Log::error('FCM Send Failed: ' . $e->getMessage());
                 // لو الـ token منتهي، ممكن نحذفه

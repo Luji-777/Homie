@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\DB;
 
 
 
-
 class BookingSeeder extends Seeder
 {
     // public function run(): void

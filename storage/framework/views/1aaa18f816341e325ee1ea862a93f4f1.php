@@ -275,4 +275,4 @@
         <?php endif; ?>
     </body>
 </html>
-<?php /**PATH C:\Users\TAHA ALSOUS\Desktop\course laravel\HomieProject\resources\views/welcome.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\Users\LENOVO\Desktop\lujain\course laravel\Homie\resources\views/welcome.blade.php ENDPATH**/ ?>

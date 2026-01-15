@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Apartment extends Model
 {
     protected $guarded = [];
-
     // Define relationship to User model (owner)
     public function owner()
     {

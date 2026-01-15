@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Foundation\Auth\Access\AuthorizesRequests;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ApartmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CityController;
@@ -96,4 +97,12 @@ Route::get('/test-translation', function () {
         'message_current' => __('api.test'),  
         'current_locale' => app()->getLocale(),
     ]);
+});
+
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 });

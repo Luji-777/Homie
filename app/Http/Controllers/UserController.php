@@ -40,6 +40,15 @@ class UserController extends Controller
         ]);
 
         $otp = rand(1000, 9999); // توليد رمز تحقق عشوائي من 4 أرقام
+
+        session(['otp' => $otp]);
+        session(['otp_phone' => $request->phone_number]);
+
+        // أرسل عبر واتساب
+         sendWhatsAppMessage($request->phone_number,
+    "Your confirmation code is: {$otp}. Do not share it with anyone.");
+
+
         $birthDate = Carbon::createFromFormat('d-m-Y', $request->birth_date)->format('Y-m-d'); // شكل التاريخ
 
         // معالجة صور المستخدم
@@ -148,6 +157,14 @@ class UserController extends Controller
         $user = User::where('phone_number', $request->phone_number)->firstOrFail();
 
         $otp = rand(1000, 9999);
+
+        session(['otp' => $otp]);
+        session(['otp_phone' => $request->phone_number]);
+
+        // أرسل عبر واتساب
+         sendWhatsAppMessage($request->phone_number,
+        "Your confirmation code is: {$otp}. Do not share it with anyone.");
+
         $user->otp_code = $otp;
         $user->otp_expires_at = Carbon::now()->addMinutes(10);
         $user->save();
@@ -191,6 +208,11 @@ class UserController extends Controller
     // }
     public function login(Request $request)
     {
+       $user = User::where('phone_number', $request->phone_number)->first();
+        if(!$user->is_verified){
+            return response()->json('Your account is currently under review by the administrator. Please wait for approval before you can log in ');
+        }
+
         $request->validate([
             'phone_number' => 'required|digits_between:9,15',
             'password'     => 'required|string|min:6|max:255'
@@ -202,8 +224,6 @@ class UserController extends Controller
                 'message' => __('api.invalid_login')
             ], 401);
         }
-
-        $user = User::where('phone_number', $request->phone_number)->first();
 
         // إنشاء التوكن
         $token = $user->createToken('auth_token')->plainTextToken;

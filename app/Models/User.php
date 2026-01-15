@@ -100,4 +100,13 @@ class User extends Authenticatable
     {
         return $this->hasMany(Message::class, 'receiver_id');
     }
+
+       public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class, 'user_id');
+    }
+    public function routeNotificationForFcm()
+    {
+        return $this->fcm_token;
+    }
 }

@@ -45,8 +45,10 @@ class UserController extends Controller
         session(['otp_phone' => $request->phone_number]);
 
         // أرسل عبر واتساب
-         sendWhatsAppMessage($request->phone_number,
-    "Your confirmation code is: {$otp}. Do not share it with anyone.");
+        sendWhatsAppMessage(
+            $request->phone_number,
+            "Your confirmation code is: {$otp}. Do not share it with anyone."
+        );
 
 
         $birthDate = Carbon::createFromFormat('d-m-Y', $request->birth_date)->format('Y-m-d'); // شكل التاريخ
@@ -129,7 +131,7 @@ class UserController extends Controller
                 // 'message' => 'the code isnot true', 
                 'message' => __('api.invalid_otp'),
                 'otp' => $user->otp_code
-                ], 422);
+            ], 422);
         }
 
         // إذا كان الحساب لسا ما تمت الموافقة عليه من المدير
@@ -162,8 +164,10 @@ class UserController extends Controller
         session(['otp_phone' => $request->phone_number]);
 
         // أرسل عبر واتساب
-         sendWhatsAppMessage($request->phone_number,
-        "Your confirmation code is: {$otp}. Do not share it with anyone.");
+        sendWhatsAppMessage(
+            $request->phone_number,
+            "Your confirmation code is: {$otp}. Do not share it with anyone."
+        );
 
         $user->otp_code = $otp;
         $user->otp_expires_at = Carbon::now()->addMinutes(10);
@@ -208,9 +212,11 @@ class UserController extends Controller
     // }
     public function login(Request $request)
     {
-       $user = User::where('phone_number', $request->phone_number)->first();
-        if(!$user->is_verified){
-            return response()->json('Your account is currently under review by the administrator. Please wait for approval before you can log in ');
+        $user = User::where('phone_number', $request->phone_number)->first();
+        if (!$user->is_verified) {
+            return response()->json(
+                ['message' => __('api.pending_admin_approval')]
+                );
         }
 
         $request->validate([

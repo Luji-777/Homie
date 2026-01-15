@@ -10,119 +10,152 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 
-// class BookingSeeder extends Seeder
-// {
-//     public function run(): void
-//     {
-//         $apartments = Apartment::with('owner')->get();
-//         $users = User::pluck('id')->toArray();
 
-//         if ($apartments->isEmpty() || empty($users)) {
-//             $this->command->warn('No apartments or users found. BookingSeeder skipped.');
-//             return;
-//         }
-
-//         foreach ($apartments as $apartment) {
-
-//             // نعمل 1 إلى 3 حجوزات لكل شقة
-//             $bookingsCount = rand(1, 3);
-
-//             for ($i = 0; $i < $bookingsCount; $i++) {
-
-//                 // tenant مختلف عن owner
-//                 $tenantId = collect($users)
-//                     ->reject(fn ($id) => $id == $apartment->owner_id)
-//                     ->random();
-
-//                 $checkIn = Carbon::now()->addDays(rand(-30, 30));
-//                 $checkOut = (clone $checkIn)->addDays(rand(1, 10));
-
-//                 $days = $checkIn->diffInDays($checkOut);
-//                 $pricePerDay = rand(20, 60);
-
-//                 $status = collect([
-//                     'pending',
-//                     'owner_approved',
-//                     'owner_rejected',
-//                     'paid',
-//                     'completed',
-//                 ])->random();
-
-//                 Booking::create([
-//                     'apartment_id' => $apartment->id,
-//                     'owner_id' => $apartment->owner_id,
-//                     'tenant_id' => $tenantId,
-//                     'check_in' => $checkIn,
-//                     'check_out' => $checkOut,
-//                     'total_price' => $days * $pricePerDay,
-//                     'status' => $status,
-//                     'owner_approval' => in_array($status, ['owner_approved', 'paid', 'completed']),
-//                     'cancellation_reason' => $status === 'owner_rejected'
-//                         ? fake()->sentence()
-//                         : null,
-//                 ]);
-//             }
-//         }
-//     }
-// }
 
 class BookingSeeder extends Seeder
 {
+    // public function run(): void
+    // {
+    //     $statuses = [
+    //         'pending',
+    //         'owner_approved',
+    //         'owner_rejected',
+    //         'cancelled',
+    //         'completed',
+    //     ];
+
+    //     $requestStatuses = [
+    //         'new',
+    //         'pending_owner',
+    //         'owner_accepted',
+    //         'owner_rejected',
+    //         'tenant_cancel_request',
+    //         'owner_cancel_accepted',
+    //         'owner_cancel_rejected',
+    //         'tenant_modify_request',
+    //         'owner_modify_accepted',
+    //         'owner_modify_rejected',
+    //         'completed',
+    //     ];
+
+    //     for ($i = 1; $i <= 10; $i++) {
+
+    //         $checkIn  = Carbon::now()->addDays(rand(1, 20));
+    //         $checkOut = (clone $checkIn)->addDays(rand(1, 7));
+
+    //         $status = $statuses[array_rand($statuses)];
+
+    //         DB::table('bookings')->insert([
+    //             'apartment_id' => rand(1, 10), // تأكد إنو عندك شقق بهالـ IDs
+    //             'tenant_id'    => rand(2, 10), // مستأجر
+    //             'owner_id'     => 1,           // مالك (مثلاً user ID = 1)
+
+    //             'check_in'     => $checkIn->toDateString(),
+    //             'check_out'    => $checkOut->toDateString(),
+    //             'total_price'  => rand(200, 3000),
+
+    //             'status'       => $status,
+    //             'request_status' => $requestStatuses[array_rand($requestStatuses)],
+
+    //             'cancellation_reason' => $status === 'cancelled'
+    //                 ? 'تم الإلغاء بسبب تغيير بالخطة'
+    //                 : null,
+
+    //             'cancelled_at' => $status === 'cancelled'
+    //                 ? Carbon::now()
+    //                 : null,
+
+    //             'created_at'   => now(),
+    //             'updated_at'   => now(),
+    //         ]);
+    //     }
+    // }
     public function run(): void
     {
+        $users = DB::table('users')->pluck('id')->toArray();
+
+        // ✅ الحالات المطلوبة بالضبط (20)
         $statuses = [
-            'pending',
-            'owner_approved',
-            'owner_rejected',
-            'cancelled',
-            'completed',
+            // 5 مكتملة
+            'completed', 'completed', 'completed', 'completed', 'completed',
+
+            // 4 ملغية
+            'cancelled', 'cancelled', 'cancelled', 'cancelled',
+
+            // 4 منتظرة
+            'pending', 'pending', 'pending', 'pending',
+
+            // 5 مقبولة
+            'owner_approved', 'owner_approved', 'owner_approved', 'owner_approved', 'owner_approved',
+
+            // 2 مرفوضة
+            'owner_rejected', 'owner_rejected',
         ];
 
-        $requestStatuses = [
-            'new',
-            'pending_owner',
-            'owner_accepted',
-            'owner_rejected',
-            'tenant_cancel_request',
-            'owner_cancel_accepted',
-            'owner_cancel_rejected',
-            'tenant_modify_request',
-            'owner_modify_accepted',
-            'owner_modify_rejected',
-            'completed',
-        ];
+        foreach ($statuses as $index => $status) {
 
-        for ($i = 1; $i <= 10; $i++) {
+            // المستأجر
+            $tenantId = $users[$index % count($users)];
 
-            $checkIn  = Carbon::now()->addDays(rand(1, 20));
-            $checkOut = (clone $checkIn)->addDays(rand(1, 7));
+            // المالك (التالي)
+            $ownerId = $users[($index + 1) % count($users)];
 
-            $status = $statuses[array_rand($statuses)];
+            // جلب شقة للمالك
+            $apartment = DB::table('apartments')
+                ->where('owner_id', $ownerId)
+                ->first();
+
+            if (!$apartment) {
+                continue;
+            }
+
+            // إعداد افتراضي
+            $cancelledAt = null;
+            $cancelReason = null;
+
+            // تواريخ
+            if ($status === 'completed') {
+                $checkIn  = Carbon::now()->subDays(rand(20, 40));
+                $checkOut = (clone $checkIn)->addDays(rand(2, 5));
+            } else {
+                $checkIn  = Carbon::now()->addDays(rand(2, 10));
+                $checkOut = (clone $checkIn)->addDays(rand(2, 5));
+            }
+
+            // request_status حسب الحالة
+            $requestStatus = match ($status) {
+                'pending'         => 'pending_owner',
+                'owner_approved'  => 'owner_accepted',
+                'owner_rejected'  => 'owner_rejected',
+                'cancelled'       => 'owner_cancel_accepted',
+                'completed'       => 'completed',
+            };
+
+            // بيانات الإلغاء
+            if ($status === 'cancelled') {
+                $cancelledAt = Carbon::now()->subDays(rand(1, 10));
+                $cancelReason = 'تم إلغاء الحجز';
+            }
 
             DB::table('bookings')->insert([
-                'apartment_id' => rand(1, 10), // تأكد إنو عندك شقق بهالـ IDs
-                'tenant_id'    => rand(2, 10), // مستأجر
-                'owner_id'     => 1,           // مالك (مثلاً user ID = 1)
+                'apartment_id' => $apartment->id,
+                'tenant_id'    => $tenantId,
+                'owner_id'     => $ownerId,
 
-                'check_in'     => $checkIn->toDateString(),
-                'check_out'    => $checkOut->toDateString(),
-                'total_price'  => rand(200, 3000),
+                'check_in'  => $checkIn,
+                'check_out' => $checkOut,
 
-                'status'       => $status,
-                'request_status' => $requestStatuses[array_rand($requestStatuses)],
+                'total_price' => rand(150000, 600000),
 
-                'cancellation_reason' => $status === 'cancelled'
-                    ? 'تم الإلغاء بسبب تغيير بالخطة'
-                    : null,
+                'status'         => $status,
+                'request_status' => $requestStatus,
 
-                'cancelled_at' => $status === 'cancelled'
-                    ? Carbon::now()
-                    : null,
+                'cancellation_reason' => $cancelReason,
+                'cancelled_at'        => $cancelledAt,
 
-                'created_at'   => now(),
-                'updated_at'   => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }
 }
-

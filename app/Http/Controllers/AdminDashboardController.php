@@ -53,6 +53,10 @@ class AdminDashboardController extends Controller
         ));
     }
 
+
+
+
+
     public function approve($id)
     {
         $user = User::findOrFail($id);
@@ -62,6 +66,15 @@ class AdminDashboardController extends Controller
         return redirect('/admin')->with('success', 'تم الموافقة على المستخدم!');
     }
 
+    public function approveAllUsers()
+    {
+        User::where('is_verified', false)->update(['is_verified' => true]);
+        return redirect()->back()->with('success', 'تمت الموافقة على جميع المستخدمين!');
+    }
+
+
+
+
     public function delete($id)
     {
         $user = User::findOrFail($id);
@@ -69,6 +82,11 @@ class AdminDashboardController extends Controller
 
         return redirect('/admin')->with('success', 'تم حذف المستخدم!');
     }
+
+
+
+
+
 
 
     public function approveApartment($id)
@@ -80,6 +98,17 @@ class AdminDashboardController extends Controller
         return redirect()->route('admin.dashboard')->with('success', 'تمت الموافقة على الشقة بنجاح!');
     }
 
+
+    public function approveAllApartments()
+    {
+        // تحديث كل الشقق اللي is_approved = false
+        Apartment::where('is_approved', false)->update(['is_approved' => true]);
+
+        return redirect()->back()->with('success', 'تمت الموافقة على جميع الشقق!');
+    }
+
+
+
     public function deleteApartment($id)
     {
         $apartment = Apartment::findOrFail($id);
@@ -87,6 +116,15 @@ class AdminDashboardController extends Controller
 
         return redirect()->route('admin.dashboard')->with('success', 'تم حذف الشقة بنجاح!');
     }
+
+
+
+
+
+
+
+
+
 
 
     public function apartmentDetails($id)

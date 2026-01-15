@@ -187,8 +187,8 @@
                     <div class="col-md-4"><div class="info-item text-center"><strong>المالك</strong><br><h4>{{ $apartment->owner->name ?? 'غير معروف' }}</h4></div></div>
                     <div class="col-md-4"><div class="info-item text-center"><strong>النوع</strong><br><h4>{{ ucfirst($apartment->type) }}</h4></div></div>
                     <div class="col-md-4"><div class="info-item text-center"><strong>المساحة</strong><br><h4>{{ $apartment->space }} م²</h4></div></div>
-                    <div class="col-md-4"><div class="info-item text-center"><strong>السعر اليومي</strong><br><h4>{{ number_format($apartment->price_per_day) }} ل.س</h4></div></div>
-                    <div class="col-md-4"><div class="info-item text-center"><strong>السعر الشهري</strong><br><h4>{{ number_format($apartment->price_per_month) }} ل.س</h4></div></div>
+                    <div class="col-md-4"><div class="info-item text-center"><strong>السعر</strong><br><h4>{{ number_format($apartment->price) }} ل.س</h4></div></div>
+                    <div class="col-md-4"><div class="info-item text-center"><strong>نوع الأجار</strong><br><h4>{{ ucfirst($apartment->rent_type) }}</h4></div></div>
                     <div class="col-md-4"><div class="info-item text-center"><strong>الطابق</strong><br><h4>{{ $apartment->floor }}</h4></div></div>
                     <div class="col-md-3"><div class="info-item text-center"><strong>الغرف</strong><br><h4>{{ $apartment->rooms }}</h4></div></div>
                     <div class="col-md-3"><div class="info-item text-center"><strong>غرف نوم</strong><br><h4>{{ $apartment->bedrooms }}</h4></div></div>

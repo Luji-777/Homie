@@ -11,7 +11,7 @@ Route::get('/', function () {
 // Route::get('/admin', [AdminDashboardController::class, 'index']);
 
 Route::get('/admin', [AdminDashboardController::class, 'index'])
-->name('admin.dashboard');
+    ->name('admin.dashboard');
 
 
 Route::post('/admin/approve/{id}', [AdminDashboardController::class, 'approve']);
@@ -24,5 +24,10 @@ Route::delete('/admin/apartments/delete/{id}', [AdminDashboardController::class,
     ->name('admin.delete.apartment');
 
 
+// موافقة جميع المستخدمين المنتظرين
+Route::post('/admin/approve-all-users', [AdminDashboardController::class, 'approveAllUsers'])->name('admin.approve.all.users');
+
+// موافقة جميع الشقق المنتظرة
+Route::post('/admin/approve-all-apartments', [AdminDashboardController::class, 'approveAllApartments'])->name('admin.approve.all.apartments');
 Route::get('/admin/apartments/{id}', [AdminDashboardController::class, 'apartmentDetails'])
     ->name('admin.apartment.details');

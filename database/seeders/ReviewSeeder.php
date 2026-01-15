@@ -5,31 +5,39 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Review;
 use App\Models\Booking;
+use Illuminate\Support\Facades\DB;
 
 class ReviewSeeder extends Seeder
 {
     public function run(): void
     {
-        $bookings = Booking::all();
+        // جلب الحجوزات المكتملة فقط
+        $completedBookings = DB::table('bookings')
+            ->where('status', 'completed')
+            ->get();
 
-        if ($bookings->isEmpty()) {
-            $this->command->warn('No bookings found. ReviewSeeder skipped.');
-            return;
-        }
+        $comments = [
+            'تجربة ممتازة، الشقة نظيفة ومريحة',
+            'المكان رائع وصاحب الشقة متعاون',
+            'كل شي كان تمام وأنصح بهاي الشقة',
+            'موقع ممتاز وخدمة رائعة',
+            'الشقة أفضل من المتوقع',
+            'إقامة مريحة وسلسة',
+            'نظافة عالية وتعامل محترم',
+        ];
 
-        foreach ($bookings as $booking) {
+        foreach ($completedBookings as $booking) {
 
-            // نتجنب تكرار Review لنفس الحجز
-            if ($booking->review) {
-                continue;
-            }
-
-            Review::create([
+            DB::table('reviews')->insert([
                 'apartment_id' => $booking->apartment_id,
-                'tenant_id' => $booking->tenant_id,
-                'booking_id' => $booking->id,
-                'rating' => rand(3, 5), // غالبًا تقييمات إيجابية
-                'comment' => fake()->sentence(12),
+                'tenant_id'    => $booking->tenant_id,
+                'booking_id'   => $booking->id,
+
+                'rating'  => rand(3, 5),
+                'comment' => $comments[array_rand($comments)],
+
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
     }

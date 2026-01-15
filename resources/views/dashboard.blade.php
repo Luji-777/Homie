@@ -237,7 +237,19 @@ h1 {
     <div class="tab-content" id="userTabContent">
         <!-- تبويب المستخدمين المنتظرين -->
         <div class="tab-pane fade show active" id="pending" role="tabpanel">
-            <h3>المستخدمين المنتظرين الموافقة</h3>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>المستخدمين المنتظرين الموافقة</h3>
+                <!-- زر الموافقة للجميع -->
+                @if($pendingUsers->count() > 0)
+                <form action="{{ route('admin.approve.all.users') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-success btn-sm" style="border-radius: 25px; padding: 8px 20px;">
+                        موافقة للجميع
+                    </button>
+                </form>
+                @endif
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
                     <thead class="table-dark">
@@ -275,6 +287,7 @@ h1 {
                 </table>
             </div>
         </div>
+
 
         <!-- تبويب جميع المستخدمين -->
         <div class="tab-pane fade" id="all" role="tabpanel">
@@ -324,9 +337,22 @@ h1 {
                 </table>
             </div>
         </div>
+
         <!-- تبويب الشقق المنتظرة -->
         <div class="tab-pane fade" id="pending-apartments" role="tabpanel">
-            <h3>الشقق المنتظرة الموافقة</h3>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>الشقق المنتظرة الموافقة</h3>
+                <!-- زر الموافقة للجميع -->
+                @if($pendingApartments->count() > 0)
+                <form action="{{ route('admin.approve.all.apartments') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-success btn-sm" style="border-radius: 25px; padding: 8px 20px;">
+                        موافقة للجميع
+                    </button>
+                </form>
+                @endif
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
                     <thead class="table-dark">
@@ -346,7 +372,8 @@ h1 {
                                     <a href="{{ route('admin.apartment.details', $apartment->id) }}" class="text-primary fw-bold">
                                         {{ $apartment->title }}
                                     </a>
-                                </td>                                <td>{{ $apartment->owner->name ?? 'غير معروف' }}</td>
+                                </td>
+                                <td>{{ $apartment->owner->name ?? 'غير معروف' }}</td>
                                 <td><span class="badge bg-warning">منتظر</span></td>
                                 <td>
                                     <form action="{{ route('admin.approve.apartment', $apartment->id) }}" method="POST" style="display:inline;">
@@ -369,6 +396,8 @@ h1 {
                 </table>
             </div>
         </div>
+
+
 
         <!-- تبويب جميع الشقق -->
         <div class="tab-pane fade" id="all-apartments" role="tabpanel">
